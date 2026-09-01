@@ -243,6 +243,10 @@ import {
 
 const activeSection = ref('s6')
 
+watch(activeSection, () => {
+  window.scrollTo(0, 0)
+})
+
 const navItems = [
   { key: 's1', icon: '📈', label: '业务核心指标', badge: '' },
   { key: 's2', icon: '🔌', label: '开放能力', badge: '' },
