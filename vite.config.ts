@@ -6,6 +6,7 @@ import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import { resolve } from 'path'
 
 export default defineConfig({
+  base: '/devkitadmin/',
   plugins: [
     vue(),
     Components(),
