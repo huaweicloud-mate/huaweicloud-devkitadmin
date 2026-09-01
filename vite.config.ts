@@ -6,6 +6,7 @@ import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import { resolve } from 'path'
 
 export default defineConfig({
+  base: '/devkitadmin/',
   plugins: [
     vue(),
     Components(),
@@ -31,9 +32,9 @@ export default defineConfig({
     },
   },
   server: {
-    https: true,
-    host: 'localhost',
-    port: 3000,
+    https: false,
+    host: '0.0.0.0',
+    port: 3002,
     proxy: {
       '/api': {
         target: process.env.VITE_API_PROXY_TARGET || 'http://localhost:8080',

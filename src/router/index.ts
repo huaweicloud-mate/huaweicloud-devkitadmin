@@ -1,9 +1,8 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import type { RouteRecordRaw } from 'vue-router'
 import routes from './routes'
 
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory('/devkitadmin/'),
   routes,
 })
 
