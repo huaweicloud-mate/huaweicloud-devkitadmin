@@ -1,10 +1,9 @@
 <template>
-  <div>
-    <h1>{{ $t('common.hello') }}</h1>
-  </div>
+  <Dashboard />
 </template>
 
 <script setup lang="ts">
+import Dashboard from './dashboard/index.vue'
 </script>
 
 <style scoped lang="scss">
