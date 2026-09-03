@@ -438,3 +438,87 @@ export function getUserPieOption(user: UserRecord): EChartsOption {
 
 export const colorPaletteExport = colorPalette
 export const axisStyleExport = axisStyle
+
+// ======================== Factory Functions (API data → ECharts option) ========================
+
+/** DAU/MAU 趋势折线图（接收 API 数据） */
+export function buildDauTrendOption(data: Array<{ date: string; dau: number; mau: number }>): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['DAU', 'MAU'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 40, right: 20, top: 35, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: data.map(d => d.date),
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.length / 8)) },
+    },
+    yAxis: { type: 'value', ...axisStyle },
+    series: [
+      {
+        name: 'DAU', type: 'line', smooth: true, data: data.map(d => d.dau),
+        itemStyle: { color: '#5B8DEF' },
+        areaStyle: {
+          color: {
+            type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [{ offset: 0, color: 'rgba(91,141,239,0.25)' }, { offset: 1, color: 'rgba(91,141,239,0)' }],
+          },
+        },
+      },
+      { name: 'MAU', type: 'line', smooth: true, data: data.map(d => d.mau), itemStyle: { color: '#722ED1' } },
+    ],
+  }
+}
+
+/** Agent 接入分布横向柱状图（接收 API 数据） */
+export function buildAgentDistributionOption(data: Array<{ name: string; count: number }>): EChartsOption {
+  const sorted = [...data].sort((a, b) => a.count - b.count)
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 100, right: 40, top: 10, bottom: 25 },
+    xAxis: { type: 'value', ...axisStyle },
+    yAxis: {
+      type: 'category',
+      data: sorted.map(d => d.name),
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, fontSize: 11 },
+    },
+    series: [{
+      type: 'bar',
+      data: sorted.map(d => ({
+        value: d.count,
+        itemStyle: { color: '#5B8DEF', borderRadius: [0, 4, 4, 0] },
+      })),
+      barWidth: '55%',
+      label: { show: true, position: 'right', fontSize: 11, color: '#6B7280' },
+    }] as any[],
+  }
+}
+
+/** npm 下载量趋势折线图（接收 API 数据） */
+export function buildNpmTrendOption(data: Array<{ date: string; downloads: number }>): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 45, right: 20, top: 20, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: data.map(d => d.date),
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.length / 8)) },
+    },
+    yAxis: { type: 'value', ...axisStyle },
+    series: [{
+      name: 'npm下载量',
+      type: 'line',
+      smooth: true,
+      data: data.map(d => d.downloads),
+      itemStyle: { color: '#FAAD14' },
+      areaStyle: {
+        color: {
+          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [{ offset: 0, color: 'rgba(250,173,20,0.25)' }, { offset: 1, color: 'rgba(250,173,20,0)' }],
+        },
+      },
+    }],
+  }
+}

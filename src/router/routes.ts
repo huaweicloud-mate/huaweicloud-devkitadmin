@@ -1,5 +1,4 @@
 import type { RouteRecordRaw } from 'vue-router'
-
 const routes: RouteRecordRaw[] = [
   {
     path: '/',
@@ -7,10 +6,15 @@ const routes: RouteRecordRaw[] = [
     component: () => import('@/pages/index.vue'),
   },
   {
+    path: '/login',
+    name: 'login',
+    component: () => import('@/pages/login/index.vue'),
+  },
+  {
     path: '/dashboard',
     name: 'dashboard',
     component: () => import('@/pages/dashboard/index.vue'),
+    meta: { requiresAuth: true },
   },
 ]
-
 export default routes

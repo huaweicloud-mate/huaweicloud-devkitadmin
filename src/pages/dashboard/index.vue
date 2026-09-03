@@ -32,31 +32,85 @@
       <div class="content">
         <!-- ======== Section 1: 业务核心指标 ======== -->
         <section v-if="activeSection === 's1'" class="section">
+          <!-- 开发者相关 -->
+          <div class="sub-section-title">开发者相关</div>
           <div class="kpi-grid">
-            <KpiCard label="开发者总数" value="12,486" trend="↑ 8.3% 较上月" trend-dir="up" accent="blue" icon="👥" />
-            <KpiCard label="新增用户（环比）" value="956" trend="↑ 12.5% 环比增长" trend-dir="up" accent="green" icon="➕" />
-            <KpiCard label="新增用户（同比）" value="3,241" trend="↑ 45.2% 同比增长" trend-dir="up" accent="orange" icon="📊" />
-            <KpiCard label="日活跃数（DAU）" value="3,572" trend="↑ 5.1% 较昨日" trend-dir="up" accent="cyan" icon="☀️" />
-            <KpiCard label="月活跃数（MAU）" value="8,934" trend="↑ 9.7% 较上月" trend-dir="up" accent="purple" icon="🌙" />
+            <KpiCard
+              label="开发者总数"
+              :value="fmt(store.developerSummary?.totalDevelopers)"
+              trend="↑ 较上月增长"
+              trend-dir="up"
+              accent="blue"
+              icon="👥"
+            >
+              <template #badge>
+                <div class="kpi-badge">
+                  <div class="badge-label">新增环比</div>
+                  <div class="badge-num">{{ fmt(store.developerSummary?.newUsersThisMonth) }}</div>
+                  <div class="badge-trend up">↑ {{ store.developerSummary?.newUsersGrowthRate ?? '--' }}%</div>
+                </div>
+              </template>
+            </KpiCard>
+            <KpiCard
+              label="Agent接入总数"
+              :value="fmt(store.developerSummary?.agentTotal)"
+              trend="↑ 较上月增长"
+              trend-dir="up"
+              accent="green"
+              icon="🤖"
+            />
+            <KpiCard
+              label="日活跃数（DAU）"
+              :value="fmt(store.developerSummary?.dau)"
+              trend="今日活跃"
+              trend-dir="up"
+              accent="cyan"
+              icon="☀️"
+            />
+            <KpiCard
+              label="月活跃数（MAU）"
+              :value="fmt(store.developerSummary?.mau)"
+              trend="近30天活跃"
+              trend-dir="up"
+              accent="purple"
+              icon="🌙"
+            />
+          </div>
+          <div class="chart-row one">
+            <ChartCard title="DAU / MAU 趋势（近30天）" desc="日活和月活趋势" :option="dauTrendOpt" :height="320" />
+          </div>
+
+          <!-- 插件相关 -->
+          <div class="sub-section-title" style="margin-top:24px">插件相关</div>
+          <div class="kpi-grid">
+            <KpiCard
+              label="npm 累计下载"
+              :value="fmt(store.npmSummary?.cumulativeDownloads)"
+              trend="累计总量"
+              trend-dir="up"
+              accent="blue"
+              icon="📦"
+            />
+            <KpiCard
+              label="npm 近7天下载"
+              :value="fmt(store.npmSummary?.weekDownloads)"
+              trend="周下载量"
+              trend-dir="flat"
+              accent="green"
+              icon="📅"
+            />
+            <KpiCard
+              label="npm 昨日下载"
+              :value="fmt(store.npmSummary?.dailyDownloads)"
+              trend="每日采集"
+              trend-dir="flat"
+              accent="orange"
+              icon="📊"
+            />
           </div>
           <div class="chart-row two">
-            <ChartCard title="日活 / 月活 趋势（近30天）" :option="dauMauOpt" />
-            <ChartCard title="新增用户趋势（环比 vs 同比）" :option="newUserOpt" />
-          </div>
-          <div class="kpi-grid" style="margin-top:8px">
-            <KpiCard label="Agent接入总数" value="4,213" trend="↑ 15.2% 较上月" trend-dir="up" accent="blue" icon="🤖" />
-            <KpiCard label="插件总下载量" value="87,562" trend="↑ 22.8% 较上月" trend-dir="up" accent="green" icon="⬇️" />
-            <KpiCard label="GitHub 下载/Clone" value="32,104" trend="↑ 18.3% 较上月" trend-dir="up" accent="orange" icon="🐙" />
-            <KpiCard label="npm 下载量" value="41,890" trend="↑ 27.1% 较上月" trend-dir="up" accent="cyan" icon="📦" />
-            <KpiCard label="市场下载量" value="13,568" trend="↑ 14.6% 较上月" trend-dir="up" accent="purple" icon="🛒" />
-          </div>
-          <div class="chart-row two">
-            <ChartCard title="开发者Agent接入数量（按种类分布）" desc="不同类型Agent的接入数量占比" :option="agentTypeOpt" />
-            <ChartCard title="插件下载量趋势（GitHub / npm）" desc="每日拉取一次，展示近30天各渠道下载量趋势" :option="downloadTrendOpt" />
-          </div>
-          <div class="chart-row one-half">
-            <ChartCard title="GitHub & npm 每日下载量明细" desc="每日拉取一次数据，展示双渠道日粒度下载对比" :option="ghNpmOpt" :height="280" />
-            <ChartCard title="下载渠道占比" desc="GitHub / npm / 市场 三渠道占比" :option="downloadPieOpt" :height="280" />
+            <ChartCard title="Agent 接入数量（按种类分布）" desc="按Agent名称合并统计（不区分平台）" :option="agentDistOpt" :height="320" />
+            <ChartCard title="npm 下载量趋势" desc="近30天npm下载量趋势（每日采集）" :option="npmTrendOpt" :height="320" />
           </div>
         </section>
 
@@ -230,16 +284,25 @@ import KpiCard from './components/KpiCard.vue'
 import ChartCard from './components/ChartCard.vue'
 import AlertBanner from './components/AlertBanner.vue'
 import UserDetailModal from './components/UserDetailModal.vue'
+import { useDashboardStore } from '@/store/dashboard'
 import { users } from './data/charts'
 import {
-  getDauMauOption, getNewUserOption, getAgentTypeOption, getDownloadTrendOption,
-  getGhNpmDailyOption, getDownloadPieOption,
+  getDauMauOption, getAgentTypeOption, getDownloadTrendOption,
   getCapabilityTrendOption, getCapabilityPieOption, getSkillRankOption,
   getStarTrendOption, getContributorOption,
   getSandboxTrendOption, getSandboxDurationOption, getSandboxHourlyOption,
   getVoucherTrendOption, getVoucherPieOption,
   getActivityFunnelOption, getActivityTrendOption, getActivityConvOption,
+  buildDauTrendOption, buildAgentDistributionOption, buildNpmTrendOption,
 } from './data/charts'
+
+const store = useDashboardStore()
+
+/** 格式化数字（千分位） */
+function fmt(val: number | undefined | null): string {
+  if (val == null) return '--'
+  return val.toLocaleString()
+}
 
 const activeSection = ref('s6')
 
@@ -316,6 +379,8 @@ const handleResize = () => funnelChart?.resize()
 onMounted(() => {
   nextTick(initFunnel)
   window.addEventListener('resize', handleResize)
+  // Load Section 1 business metrics from API
+  store.loadBusinessMetrics()
 })
 
 onBeforeUnmount(() => {
@@ -323,14 +388,24 @@ onBeforeUnmount(() => {
   funnelChart?.dispose()
 })
 
-// Chart options
-const dauMauOpt = getDauMauOption()
-const newUserOpt = getNewUserOption()
-const agentTypeOpt = getAgentTypeOption()
-const downloadTrendOpt = getDownloadTrendOption()
-const ghNpmOpt = getGhNpmDailyOption()
-const downloadPieOpt = getDownloadPieOption()
+// Chart options — Section 1 uses API data via store (computed)
+const dauTrendOpt = computed(() =>
+  store.dauTrend.length
+    ? buildDauTrendOption(store.dauTrend)
+    : getDauMauOption() // fallback to mock if no data yet
+)
+const agentDistOpt = computed(() =>
+  store.agentDistribution.length
+    ? buildAgentDistributionOption(store.agentDistribution)
+    : getAgentTypeOption()
+)
+const npmTrendOpt = computed(() =>
+  store.npmTrend.length
+    ? buildNpmTrendOption(store.npmTrend)
+    : getDownloadTrendOption()
+)
 
+// Chart options — Sections 2-6 still use mock data (will be migrated later)
 const capTrendOpt = getCapabilityTrendOption()
 const capPieOpt = getCapabilityPieOption()
 const skillRankOpt = getSkillRankOption()
@@ -380,6 +455,44 @@ function refreshData() {
 </script>
 
 <style lang="scss">
+// Sub-section title
+.sub-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  padding-left: 10px;
+  border-left: 3px solid #5b8def;
+  margin-bottom: 16px;
+  line-height: 1.4;
+}
+
+// KPI badge (inside KpiCard slot)
+.kpi-badge {
+  text-align: right;
+  padding-left: 16px;
+  border-left: 1px solid #f0f0f0;
+  z-index: 2;
+  position: relative;
+
+  .badge-label {
+    font-size: 11px;
+    color: #9ca3af;
+    margin-bottom: 2px;
+  }
+  .badge-num {
+    font-size: 18px;
+    font-weight: 700;
+    color: #1f2937;
+    line-height: 1.1;
+  }
+  .badge-trend {
+    font-size: 11px;
+    margin-top: 3px;
+    &.up { color: #52c41a; }
+    &.down { color: #ff4d4f; }
+  }
+}
+
 // Reusable chart card (used outside ChartCard component)
 .chart-card {
   background: #fff;
