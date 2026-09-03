@@ -117,9 +117,9 @@
         <!-- ======== Section 2: 开放能力 ======== -->
         <section v-if="activeSection === 's2'" class="section">
           <div class="kpi-grid">
-            <KpiCard label="Skill 调用总次数" value="156,832" trend="↑ 18.4% 较上周" trend-dir="up" accent="blue" icon="🛠️" />
-            <KpiCard label="MCP 调用总次数" value="89,241" trend="↑ 22.1% 较上周" trend-dir="up" accent="green" icon="🔗" />
-            <KpiCard label="开放能力调用总次数" value="132,808" trend="↑ 15.6% 较上周" trend-dir="up" accent="orange" icon="⚡" />
+            <KpiCard label="Skill 调用总次数" :value="fmt(store.capabilitySummary?.totalCalls)" trend="↑ 较上周" trend-dir="up" accent="blue" icon="🛠️" />
+            <KpiCard label="MCP 调用总次数" :value="fmt(store.capabilitySummary?.uniqueUsers)" trend="↑ 较上周" trend-dir="up" accent="green" icon="🔗" />
+            <KpiCard label="开放能力调用总次数" :value="fmt(store.capabilitySummary?.dailyAvgCalls)" trend="↑ 较上周" trend-dir="up" accent="orange" icon="⚡" />
           </div>
           <div class="chart-row two">
             <ChartCard title="调用次数趋势（Skill / MCP / 开放能力）" desc="近14天 Skill调用、MCP调用、开放能力调用次数趋势" :option="capTrendOpt" />
@@ -294,6 +294,7 @@ import {
   getVoucherTrendOption, getVoucherPieOption,
   getActivityFunnelOption, getActivityTrendOption, getActivityConvOption,
   buildDauTrendOption, buildAgentDistributionOption, buildNpmTrendOption,
+  buildCapabilityTrendOption, buildCapabilityPieOption, buildSkillRankOption,
 } from './data/charts'
 
 const store = useDashboardStore()
@@ -406,9 +407,21 @@ const npmTrendOpt = computed(() =>
 )
 
 // Chart options — Sections 2-6 still use mock data (will be migrated later)
-const capTrendOpt = getCapabilityTrendOption()
-const capPieOpt = getCapabilityPieOption()
-const skillRankOpt = getSkillRankOption()
+const capTrendOpt = computed(() =>
+  store.capabilityTrend.length
+    ? buildCapabilityTrendOption(store.capabilityTrend)
+    : getCapabilityTrendOption()
+)
+const capPieOpt = computed(() =>
+  store.capabilityDistribution.length
+    ? buildCapabilityPieOption(store.capabilityDistribution)
+    : getCapabilityPieOption()
+)
+const skillRankOpt = computed(() =>
+  store.skillRanking.length
+    ? buildSkillRankOption(store.skillRanking)
+    : getSkillRankOption()
+)
 
 const starTrendOpt = getStarTrendOption()
 const contributorOpt = getContributorOption()

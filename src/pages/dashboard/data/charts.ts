@@ -384,6 +384,77 @@ export function getActivityConvOption(): EChartsOption {
   }
 }
 
+// ======================== Open Capabilities Factory Functions ========================
+
+export function buildCapabilityTrendOption(data: Array<{ date: string; capability: string; callCount: number }>): EChartsOption {
+  const capabilities = [...new Set(data.map(item => item.capability))]
+  const dates = [...new Set(data.map(item => item.date))].sort()
+
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: capabilities, right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 50, right: 20, top: 35, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: dates,
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(dates.length / 10)) },
+    },
+    yAxis: { type: 'value', ...axisStyle },
+    series: capabilities.map((cap, index) => ({
+      name: cap,
+      type: 'line',
+      smooth: true,
+      data: dates.map(date => {
+        const item = data.find(i => i.date === date && i.capability === cap)
+        return item?.callCount || 0
+      }),
+      itemStyle: { color: colorPalette[index % colorPalette.length] },
+    })),
+  }
+}
+
+export function buildCapabilityPieOption(data: Array<{ capability: string; callCount: number; percentage: number }>): EChartsOption {
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { bottom: 0, textStyle: { fontSize: 11 } },
+    series: [{
+      type: 'pie',
+      radius: ['40%', '65%'],
+      center: ['50%', '45%'],
+      itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+      label: { fontSize: 11, formatter: '{b}\n{d}%' },
+      data: data.map((item, index) => ({
+        value: item.callCount,
+        name: item.capability,
+        itemStyle: { color: colorPalette[index % colorPalette.length] },
+      })),
+    }],
+  }
+}
+
+export function buildSkillRankOption(data: Array<{ rank: number; skillName: string; callCount: number; percentage: number }>): EChartsOption {
+  const sorted = [...data].sort((a, b) => a.callCount - b.callCount)
+  const skills = sorted.map(item => item.skillName)
+  const counts = sorted.map(item => item.callCount)
+
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 120, right: 30, top: 10, bottom: 25 },
+    xAxis: { type: 'value', ...axisStyle },
+    yAxis: { type: 'category', data: skills, ...axisStyle, axisLabel: { ...axisStyle.axisLabel, fontSize: 11 } },
+    series: [{
+      type: 'bar',
+      data: counts.map(v => ({
+        value: v,
+        itemStyle: { color: '#5B8DEF', borderRadius: [0, 4, 4, 0] },
+      })),
+      barWidth: '55%',
+      label: { show: true, position: 'right', fontSize: 11, color: '#6B7280' },
+    }] as any[],
+  }
+}
+
 // ======================== User Data (Section 2 用户明细) ========================
 
 export interface UserRecord {
