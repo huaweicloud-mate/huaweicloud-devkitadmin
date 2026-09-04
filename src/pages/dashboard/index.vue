@@ -9,6 +9,7 @@
         <div class="nav-section-title">运营看板</div>
         <div
           v-for="nav in navItems"
+          v-show="!nav.hidden"
           :key="nav.key"
           class="nav-item"
           :class="{ active: activeSection === nav.key }"
@@ -162,8 +163,8 @@
           </div>
         </section>
 
-        <!-- ======== Section 3: 插件开源运营 ======== -->
-        <section v-if="activeSection === 's3'" class="section">
+        <!-- ======== Section 3: 插件开源运营（第一版隐藏，保留代码待后续恢复） ======== -->
+        <section v-if="activeSection === 's3'" class="section hidden">
           <div class="kpi-grid">
             <KpiCard label="开源贡献者数" value="47" trend="↑ 6 本月新增" trend-dir="up" accent="blue" icon="🐙" />
             <KpiCard label="开源仓下载数" value="32,104" trend="↑ 18.3% 较上月" trend-dir="up" accent="green" icon="⬇️" />
@@ -197,29 +198,101 @@
         <!-- ======== Section 4: 沙箱资源信息 ======== -->
         <section v-if="activeSection === 's4'" class="section">
           <div class="kpi-grid">
-            <KpiCard label="总拉取沙箱次数" value="234,567" trend="↑ 累计总量" trend-dir="up" accent="blue" icon="📦" />
-            <KpiCard label="今日拉取次数" value="1,823" trend="↑ 7.2% 较昨日" trend-dir="up" accent="green" icon="📅" />
-            <KpiCard label="平均创建耗时" value="8.2" unit="秒" trend="↓ 1.3s 优化" trend-dir="down" accent="orange" icon="⏱️" />
-            <KpiCard label="P95 创建耗时" value="15.6" unit="秒" trend="SLA: <20s" trend-dir="flat" accent="purple" icon="📈" />
+            <KpiCard
+              label="沙箱总用户数"
+              :value="fmt(store.sandboxSummary?.totalUsers)"
+              trend="累计总量"
+              trend-dir="up"
+              accent="blue"
+              icon="📦"
+            />
+            <KpiCard
+              label="今日沙箱用户数"
+              :value="fmt(store.sandboxSummary?.dailyUsers)"
+              :trend="`↑ ${store.sandboxSummary?.dailyUsersChainRatio?.toFixed(1) ?? '--'}% 较昨日`"
+              trend-dir="up"
+              accent="green"
+              icon="📅"
+            />
+            <KpiCard
+              label="平均拉起耗时"
+              :value="store.sandboxSummary?.avgDurationSec?.toFixed(1) ?? '--'"
+              unit="秒"
+              :trend="`${store.sandboxSummary?.avgDurationDeltaSec != null && store.sandboxSummary.avgDurationDeltaSec >= 0 ? '↑' : '↓'} ${Math.abs(store.sandboxSummary?.avgDurationDeltaSec ?? 0).toFixed(1)}s 较昨日`"
+              :trend-dir="store.sandboxSummary?.avgDurationDeltaSec != null && store.sandboxSummary.avgDurationDeltaSec >= 0 ? 'up' : 'down'"
+              accent="orange"
+              icon="⏱️"
+            />
+            <KpiCard
+              label="P95 拉起耗时"
+              :value="store.sandboxSummary?.p95DurationSec?.toFixed(1) ?? '--'"
+              unit="秒"
+              :trend="`SLA: ${store.sandboxSummary?.slaTarget ?? '<20s'}`"
+              trend-dir="flat"
+              accent="purple"
+              icon="📈"
+            />
           </div>
           <div class="chart-row two">
-            <ChartCard title="沙箱拉取次数趋势（近30天）" desc="每日沙箱拉取总次数与成功次数对比" :option="sandboxTrendOpt" />
-            <ChartCard title="沙箱创建耗时分布" desc="创建耗时区间分布（秒），监控性能瓶颈" :option="sandboxDurationOpt" />
+            <ChartCard title="沙箱用户数趋势（近30天）" desc="每日沙箱去重用户数与事件总次数趋势" :option="sandboxTrendOpt" />
+            <ChartCard title="沙箱拉起耗时分布" desc="拉起耗时区间分布（秒），监控性能瓶颈" :option="sandboxDurationOpt" />
           </div>
           <div class="chart-row one">
-            <ChartCard title="每小时沙箱拉取热力（今日）" desc="今日各时段沙箱拉取次数分布，识别使用高峰" :option="sandboxHourlyOpt" :height="260" />
+            <ChartCard title="每小时沙箱用户数（今日）" desc="今日各时段沙箱去重用户数分布，识别使用高峰" :option="sandboxHourlyOpt" :height="260" />
           </div>
         </section>
 
         <!-- ======== Section 5: 代金券资源信息 ======== -->
         <section v-if="activeSection === 's5'" class="section">
           <div class="kpi-grid">
-            <KpiCard label="已领取总人数" value="5,672" trend="↑ 累计总量" trend-dir="up" accent="blue" icon="👥" />
-            <KpiCard label="代金券总发放金额" value="¥283,600" trend="↑ 累计总额" trend-dir="up" accent="green" icon="💰" />
-            <KpiCard label="今日领取人数" value="128" trend="↑ 15.2% 较昨日" trend-dir="up" accent="orange" icon="📅" />
-            <KpiCard label="今日发放金额" value="¥6,400" trend="↑ 12.8% 较昨日" trend-dir="up" accent="cyan" icon="💵" />
-            <KpiCard label="本月领取人数" value="2,134" trend="↑ 22.1% 环比" trend-dir="up" accent="purple" icon="🌙" />
-            <KpiCard label="本月发放金额" value="¥106,700" trend="↑ 18.5% 环比" trend-dir="up" accent="red" icon="💴" />
+            <KpiCard
+              label="已领取总人数"
+              :value="fmt(store.voucherSummary?.totalCount)"
+              trend="↑ 累计总量"
+              trend-dir="up"
+              accent="blue"
+              icon="👥"
+            />
+            <KpiCard
+              label="代金券总发放金额"
+              :value="fmtYuanWithSymbol(store.voucherSummary?.totalAmount)"
+              trend="↑ 累计总额"
+              trend-dir="up"
+              accent="green"
+              icon="💰"
+            />
+            <KpiCard
+              label="今日领取人数"
+              :value="fmt(store.voucherSummary?.todayCount)"
+              :trend="`↑ ${store.voucherSummary?.todayCountChainRatio?.toFixed(1) ?? '--'}% 较昨日`"
+              trend-dir="up"
+              accent="orange"
+              icon="📅"
+            />
+            <KpiCard
+              label="今日发放金额"
+              :value="fmtYuanWithSymbol(store.voucherSummary?.todayAmount)"
+              :trend="`↑ ${store.voucherSummary?.todayAmountChainRatio?.toFixed(1) ?? '--'}% 较昨日`"
+              trend-dir="up"
+              accent="cyan"
+              icon="💵"
+            />
+            <KpiCard
+              label="本月领取人数"
+              :value="fmt(store.voucherSummary?.monthCount)"
+              :trend="`↑ ${store.voucherSummary?.monthCountChainRatio?.toFixed(1) ?? '--'}% 环比`"
+              trend-dir="up"
+              accent="purple"
+              icon="🌙"
+            />
+            <KpiCard
+              label="本月发放金额"
+              :value="fmtYuanWithSymbol(store.voucherSummary?.monthAmount)"
+              :trend="`↑ ${store.voucherSummary?.monthAmountChainRatio?.toFixed(1) ?? '--'}% 环比`"
+              trend-dir="up"
+              accent="red"
+              icon="💴"
+            />
           </div>
           <div class="chart-row two">
             <ChartCard title="代金券领取趋势（近30天）" desc="每日领取人数与发放金额趋势" :option="voucherTrendOpt" />
@@ -248,10 +321,38 @@
         <!-- ======== Section 6: 活动统计 ======== -->
         <section v-if="activeSection === 's6'" class="section">
           <div class="kpi-grid">
-            <KpiCard label="参与总人数" value="8,421" trend="↑ 活动进行中" trend-dir="up" accent="blue" icon="🎯" />
-            <KpiCard label="初章完成人数" value="5,234" trend="完成率 62.2%" trend-dir="flat" accent="green" icon="📖" />
-            <KpiCard label="第二章完成人数" value="2,876" trend="完成率 34.2%" trend-dir="flat" accent="orange" icon="📚" />
-            <KpiCard label="终章完成人数" value="1,423" trend="完成率 16.9%" trend-dir="flat" accent="purple" icon="🏆" />
+            <KpiCard
+              label="参与总人数"
+              :value="fmt(store.activitySummary?.totalParticipants)"
+              trend="↑ 活动进行中"
+              trend-dir="up"
+              accent="blue"
+              icon="🎯"
+            />
+            <KpiCard
+              label="初章完成人数"
+              :value="fmt(store.activitySummary?.chapter1Completed)"
+              :trend="`完成率 ${store.activitySummary?.chapter1Rate?.toFixed(1) ?? '--'}%`"
+              trend-dir="flat"
+              accent="green"
+              icon="📖"
+            />
+            <KpiCard
+              label="第二章完成人数"
+              :value="fmt(store.activitySummary?.chapter2Completed)"
+              :trend="`完成率 ${store.activitySummary?.chapter2Rate?.toFixed(1) ?? '--'}%`"
+              trend-dir="flat"
+              accent="orange"
+              icon="📚"
+            />
+            <KpiCard
+              label="终章完成人数"
+              :value="fmt(store.activitySummary?.chapter3Completed)"
+              :trend="`完成率 ${store.activitySummary?.chapter3Rate?.toFixed(1) ?? '--'}%`"
+              trend-dir="flat"
+              accent="purple"
+              icon="🏆"
+            />
           </div>
           <div class="chart-row one">
             <div class="chart-card">
@@ -261,7 +362,7 @@
               <AlertBanner
                 style="margin-top:12px"
                 title="转化分析"
-                text="初章→第二章流失率最高（27.9%），建议优化第二章任务难度或增加引导。终章完成率16.9%仍有提升空间。"
+                :text="funnelAlertText"
               />
             </div>
           </div>
@@ -284,7 +385,7 @@ import KpiCard from './components/KpiCard.vue'
 import ChartCard from './components/ChartCard.vue'
 import AlertBanner from './components/AlertBanner.vue'
 import UserDetailModal from './components/UserDetailModal.vue'
-import { useDashboardStore } from '@/store/dashboard'
+import { useDashboardStore, fmtYuanWithSymbol } from '@/store/dashboard'
 import { users } from './data/charts'
 import {
   getDauMauOption, getAgentTypeOption, getDownloadTrendOption,
@@ -295,6 +396,9 @@ import {
   getActivityFunnelOption, getActivityTrendOption, getActivityConvOption,
   buildDauTrendOption, buildAgentDistributionOption, buildNpmTrendOption,
   buildCapabilityTrendOption, buildCapabilityPieOption, buildSkillRankOption,
+  buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
+  buildVoucherTrendOption, buildVoucherPieOption,
+  buildActivityFunnelOption, buildActivityTrendOption, buildActivityConvOption,
 } from './data/charts'
 
 const store = useDashboardStore()
@@ -314,7 +418,7 @@ watch(activeSection, () => {
 const navItems = [
   { key: 's1', icon: '📈', label: '业务核心指标', badge: '' },
   { key: 's2', icon: '🔌', label: '开放能力', badge: '' },
-  { key: 's3', icon: '📦', label: '插件开源运营', badge: '' },
+  { key: 's3', icon: '📦', label: '插件开源运营', badge: '', hidden: true } as any,
   { key: 's4', icon: '🖥️', label: '沙箱资源信息', badge: '' },
   { key: 's5', icon: '🎫', label: '代金券资源', badge: '' },
   { key: 's6', icon: '🎯', label: '活动统计', badge: '' },
@@ -358,20 +462,48 @@ function openUserDetail(id: string) {
   modalVisible.value = true
 }
 
-// Funnel chart (special case)
+// Funnel chart (special case — manual echarts.init, not ChartCard :option)
 const funnelRef = ref<HTMLDivElement>()
 let funnelChart: echarts.ECharts | null = null
+
+// Activity computed options
+const activityFunnelOpt = computed(() =>
+  store.activitySummary?.funnel?.length
+    ? buildActivityFunnelOption(store.activitySummary.funnel)
+    : getActivityFunnelOption()
+)
+
+const funnelAlertText = computed(() => {
+  const s = store.activitySummary
+  if (!s || s.totalParticipants === 0) return '暂无活动数据'
+  const c1Drop = (100 - s.chapter1Rate).toFixed(1)
+  const c2Drop = s.chapter1Rate > 0 ? (100 - (s.chapter2Rate / s.chapter1Rate * 100)).toFixed(1) : '--'
+  const c3Drop = s.chapter2Rate > 0 ? (100 - (s.chapter3Rate / s.chapter2Rate * 100)).toFixed(1) : '--'
+  const drops = [
+    { stage: '参与→初章', rate: c1Drop },
+    { stage: '初章→第二章', rate: c2Drop },
+    { stage: '第二章→终章', rate: c3Drop },
+  ]
+  const maxDrop = drops.reduce((a, b) => parseFloat(a.rate) > parseFloat(b.rate) ? a : b)
+  return `${maxDrop.stage}流失率最高（${maxDrop.rate}%），建议优化该环节任务难度或增加引导。终章完成率${s.chapter3Rate.toFixed(1)}%仍有提升空间。`
+})
 
 function initFunnel() {
   if (!funnelRef.value) return
   if (funnelChart) funnelChart.dispose()
   funnelChart = echarts.init(funnelRef.value)
-  funnelChart.setOption(getActivityFunnelOption())
+  funnelChart.setOption(activityFunnelOpt.value)
 }
 
 watch(activeSection, (sec) => {
   if (sec === 's6') {
     nextTick(initFunnel)
+  }
+})
+
+watch(activityFunnelOpt, (newOpt) => {
+  if (funnelChart) {
+    funnelChart.setOption(newOpt)
   }
 })
 
@@ -426,15 +558,47 @@ const skillRankOpt = computed(() =>
 const starTrendOpt = getStarTrendOption()
 const contributorOpt = getContributorOption()
 
-const sandboxTrendOpt = getSandboxTrendOption()
-const sandboxDurationOpt = getSandboxDurationOption()
-const sandboxHourlyOpt = getSandboxHourlyOption()
+const sandboxTrendOpt = computed(() =>
+  store.sandboxTrend?.daily?.length
+    ? buildSandboxTrendOption(store.sandboxTrend.daily, store.sandboxTrend.events ?? [])
+    : getSandboxTrendOption()
+)
+const sandboxDurationOpt = computed(() =>
+  store.sandboxDuration?.buckets?.length
+    ? buildSandboxDurationOption(store.sandboxDuration.buckets)
+    : getSandboxDurationOption()
+)
+const sandboxHourlyOpt = computed(() =>
+  store.sandboxHourly?.hourly?.length
+    ? buildSandboxHourlyOption(store.sandboxHourly.hourly)
+    : getSandboxHourlyOption()
+)
 
-const voucherTrendOpt = getVoucherTrendOption()
-const voucherPieOpt = getVoucherPieOption()
+const voucherTrendOpt = computed(() =>
+  store.voucherTrend?.daily?.length
+    ? buildVoucherTrendOption(store.voucherTrend.daily)
+    : getVoucherTrendOption()
+)
+const voucherPieOpt = computed(() =>
+  store.voucherDistribution?.items?.length
+    ? buildVoucherPieOption(store.voucherDistribution.items)
+    : getVoucherPieOption()
+)
 
-const activityTrendOpt = getActivityTrendOption()
-const activityConvOpt = getActivityConvOption()
+const activityTrendOpt = computed(() =>
+  store.activityTrend?.chapter1?.length
+    ? buildActivityTrendOption(
+        store.activityTrend.chapter1,
+        store.activityTrend.chapter2,
+        store.activityTrend.chapter3,
+      )
+    : getActivityTrendOption()
+)
+const activityConvOpt = computed(() =>
+  store.activityConversion?.stages?.length
+    ? buildActivityConvOption(store.activityConversion.stages)
+    : getActivityConvOption()
+)
 
 // Version list
 const versions = [
@@ -468,6 +632,8 @@ function refreshData() {
 </script>
 
 <style lang="scss">
+.hidden { display: none !important; }
+
 // Sub-section title
 .sub-section-title {
   font-size: 14px;
