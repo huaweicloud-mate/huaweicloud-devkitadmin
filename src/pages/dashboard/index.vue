@@ -364,7 +364,7 @@ import {
   getSandboxTrendOption, getSandboxDurationOption, getSandboxHourlyOption,
   getVoucherTrendOption, getVoucherPieOption,
   getActivityTrendOption, getActivityConvOption, getActivityFunnelOption,
-  buildDauTrendOption, buildAgentDistributionOption, buildNpmTrendOption,
+  buildDauTrendOption, buildAgentDistributionOption,
   buildNewUserTrendOption, buildDownloadPieOption, buildDownloadTrendOption,
   buildCapabilityTrendOption, buildCapabilityPieOption, buildSkillRankOption,
   buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
@@ -384,7 +384,7 @@ function chainTrend(rate: number | undefined | null): string {
   return (rate >= 0 ? '↑ ' : '↓ ') + Math.abs(rate).toFixed(1) + '% 环比'
 }
 
-function chainDir(rate: number | undefined | null): string {
+function chainDir(rate: number | undefined | null): 'flat' | 'up' | 'down' {
   if (rate == null || rate === 0) return 'flat'
   return rate > 0 ? 'up' : 'down'
 }
@@ -517,7 +517,7 @@ const skillRankOpt = computed(() =>
 const sandboxTrendOpt = computed(() =>
   store.sandboxTrend ? buildSandboxTrendOption({
     daily: store.sandboxTrend.daily,
-    events: store.sandboxTrend.events || [],
+    events: (store.sandboxTrend.events || []).flat(),
   }) : getSandboxTrendOption()
 )
 const sandboxDurationOpt = computed(() =>
