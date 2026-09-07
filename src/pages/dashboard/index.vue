@@ -191,22 +191,6 @@
               accent="purple"
               icon="📈"
             />
-            <KpiCard
-              label="成功率"
-              :value="store.sandboxSummary?.successRate != null ? store.sandboxSummary.successRate.toFixed(1) + '%' : '--'"
-              trend="今日成功率"
-              trend-dir="flat"
-              accent="cyan"
-              icon="✅"
-            />
-            <KpiCard
-              label="今日失败数"
-              :value="fmt(store.sandboxSummary?.failCount)"
-              trend="今日拉取失败"
-              trend-dir="down"
-              accent="red"
-              icon="❌"
-            />
           </div>
           <div class="chart-row two">
             <ChartCard title="沙箱拉取次数趋势（近30天）" desc="每日沙箱拉取总次数与成功次数对比" :option="sandboxTrendOpt" />
@@ -267,30 +251,6 @@
               :trend-dir="chainDir(store.voucherSummary?.monthAmountChain)"
               accent="red"
               icon="💴"
-            />
-            <KpiCard
-              label="领取成功率"
-              :value="store.voucherSummary?.successRate != null ? store.voucherSummary.successRate.toFixed(1) + '%' : '--'"
-              trend="今日成功率"
-              trend-dir="flat"
-              accent="green"
-              icon="✅"
-            />
-            <KpiCard
-              label="领取失败数"
-              :value="fmt(store.voucherSummary?.failCount)"
-              trend="今日领取失败"
-              trend-dir="down"
-              accent="orange"
-              icon="❌"
-            />
-            <KpiCard
-              label="重复领取数"
-              :value="fmt(store.voucherSummary?.alreadyClaimedCount)"
-              trend="今日重复领取"
-              trend-dir="flat"
-              accent="purple"
-              icon="🔁"
             />
           </div>
           <div class="chart-row two">
@@ -445,7 +405,7 @@ function getFunnelOption(): echarts.EChartsOption {
         labelLine: { length: 20, lineStyle: { width: 1, type: 'solid', color: '#E5E7EB' } },
         itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 6 },
         emphasis: { label: { fontSize: 14 }, itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: 'rgba(0,0,0,0.15)' } },
-        data: s.funnel.map(f => ({ value: f.count, name: f.name, rate: f.rate })),
+        data: s.funnel.map(f => ({ value: f.value, name: f.name, rate: f.rate })),
       }] as any[],
     }
   }
