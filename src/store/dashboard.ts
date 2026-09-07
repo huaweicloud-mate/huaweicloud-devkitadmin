@@ -62,8 +62,6 @@ export interface SandboxSummary {
   avgDeltaSec: number
   p95Sec: number
   sla: string
-  successRate: number
-  failCount: number
 }
 export interface SandboxTrendPoint { date: string; value: number }
 export interface SandboxTrend { daily: SandboxTrendPoint[]; events: SandboxTrendPoint[][]; total: number }
@@ -84,9 +82,6 @@ export interface VoucherSummary {
   monthAmount: number
   monthCountChain: number
   monthAmountChain: number
-  successRate: number
-  failCount: number
-  alreadyClaimedCount: number
 }
 export interface VoucherTrendPoint { date: string; count: number; amount: number }
 export interface VoucherTrend { points: VoucherTrendPoint[] }
@@ -94,7 +89,7 @@ export interface VoucherDistItem { faceAmount: number; claimCount: number; perce
 export interface VoucherDistribution { items: VoucherDistItem[] }
 
 // ==================== Section 6: 活动统计 ====================
-export interface FunnelStage { name: string; count: number; rate: number }
+export interface FunnelStage { name: string; value: number; rate: number }
 export interface ActivitySummary {
   totalParticipants: number
   chapter1Completed: number
