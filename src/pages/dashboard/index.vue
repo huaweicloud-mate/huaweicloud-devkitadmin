@@ -312,24 +312,24 @@
             />
             <KpiCard
               label="初章完成人数"
-              :value="fmt(store.activitySummary?.chapter1Count)"
-              :trend="'完成率 ' + (store.activitySummary?.c1Rate ?? 0) + '%'"
+              :value="fmt(store.activitySummary?.chapter1Completed)"
+      :trend="'完成率 ' + (store.activitySummary?.chapter1Rate ?? 0) + '%'"
               trend-dir="flat"
               accent="green"
               icon="📖"
             />
             <KpiCard
               label="第二章完成人数"
-              :value="fmt(store.activitySummary?.chapter2Count)"
-              :trend="'完成率 ' + (store.activitySummary?.c2Rate ?? 0) + '%'"
+              :value="fmt(store.activitySummary?.chapter2Completed)"
+      :trend="'完成率 ' + (store.activitySummary?.chapter2Rate ?? 0) + '%'"
               trend-dir="flat"
               accent="orange"
               icon="📚"
             />
             <KpiCard
               label="终章完成人数"
-              :value="fmt(store.activitySummary?.chapter3Count)"
-              :trend="'完成率 ' + (store.activitySummary?.c3Rate ?? 0) + '%'"
+              :value="fmt(store.activitySummary?.chapter3Completed)"
+      :trend="'完成率 ' + (store.activitySummary?.chapter3Rate ?? 0) + '%'"
               trend-dir="flat"
               accent="purple"
               icon="🏆"
