@@ -14,7 +14,6 @@ const routes: RouteRecordRaw[] = [
     path: '/dashboard',
     name: 'dashboard',
     component: () => import('@/pages/dashboard/index.vue'),
-    meta: { requiresAuth: true },
   },
 ]
 export default routes

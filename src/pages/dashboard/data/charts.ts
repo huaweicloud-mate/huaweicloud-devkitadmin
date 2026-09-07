@@ -522,3 +522,229 @@ export function buildNpmTrendOption(data: Array<{ date: string; downloads: numbe
     }],
   }
 }
+
+/** 新增用户月度趋势（柱状+折线，接收 API 数据） */
+export function buildNewUserTrendOption(data: Array<{ month: string; newUserCount: number; momRate: number | null; yoyRate: number | null }>): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['新增用户', '环比增长%', '同比增长%'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 45, right: 45, top: 35, bottom: 30 },
+    xAxis: { type: 'category', data: data.map(d => d.month), ...axisStyle },
+    yAxis: [
+      { type: 'value', name: '人数', ...axisStyle },
+      { type: 'value', name: '增长率%', ...axisStyle, axisLabel: { ...axisStyle.axisLabel, formatter: '{value}%' } },
+    ],
+    series: [
+      { name: '新增用户', type: 'bar', data: data.map(d => d.newUserCount), itemStyle: { color: '#5B8DEF', borderRadius: [4, 4, 0, 0] }, barWidth: '40%' },
+      { name: '环比增长%', type: 'line', yAxisIndex: 1, data: data.map(d => d.momRate), itemStyle: { color: '#52C41A' } },
+      { name: '同比增长%', type: 'line', yAxisIndex: 1, data: data.map(d => d.yoyRate), itemStyle: { color: '#FAAD14' } },
+    ],
+  }
+}
+
+/** 下载渠道占比饼图（接收 API 数据） */
+export function buildDownloadPieOption(data: Array<{ channel: string; count: number; percentage: number }>): EChartsOption {
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    series: [{
+      type: 'pie', radius: ['45%', '70%'], center: ['50%', '52%'],
+      itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+      label: { fontSize: 11, formatter: '{b}\n{d}%' },
+      data: data.map((d, i) => ({
+        value: d.count,
+        name: d.channel,
+        itemStyle: { color: colorPalette[i % colorPalette.length] },
+      })),
+    }],
+  }
+}
+
+/** 下载量趋势组合图（GitHub + npm，接收 API 数据） */
+export function buildDownloadTrendOption(data: Array<{ date: string; npmDownloads: number; githubDownloads: number | null }>): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['GitHub', 'npm'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 45, right: 20, top: 35, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: data.map(d => d.date),
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.length / 8)) },
+    },
+    yAxis: { type: 'value', ...axisStyle },
+    series: [
+      { name: 'GitHub', type: 'line', smooth: true, data: data.map(d => d.githubDownloads), itemStyle: { color: '#5B8DEF' } },
+      { name: 'npm', type: 'line', smooth: true, data: data.map(d => d.npmDownloads), itemStyle: { color: '#52C41A' } },
+    ],
+  }
+}
+
+/** 开放能力趋势（接收 API 数据） */
+export function buildCapabilityTrendOption(data: { dates: string[]; lines: Array<{ capability: string; data: number[][] }> }): EChartsOption {
+  const capColors: Record<string, string> = { Skill: '#5B8DEF', MCP: '#52C41A', CLI: '#FAAD14' }
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: data.lines.map(l => l.capability), right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 50, right: 20, top: 35, bottom: 30 },
+    xAxis: { type: 'category', data: data.dates, ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.dates.length / 8)) } },
+    yAxis: { type: 'value', ...axisStyle },
+    series: data.lines.map(l => ({
+      name: l.capability, type: 'line', smooth: true,
+      data: l.data.map(d => d[1]),
+      itemStyle: { color: capColors[l.capability] || '#5B8DEF' },
+    })),
+  }
+}
+
+/** 开放能力分布饼图（接收 API 数据） */
+export function buildCapabilityPieOption(data: { items: Array<{ capability: string; callCount: number; percentage: number }> }): EChartsOption {
+  const capColors: Record<string, string> = { Skill: '#5B8DEF', MCP: '#52C41A', CLI: '#FAAD14', API: '#FF4D4F', SDK: '#E5E7EB', TF: '#D1D5DB' }
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    legend: { bottom: 0, textStyle: { fontSize: 11 } },
+    series: [{
+      type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'],
+      itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+      label: { fontSize: 11 },
+      data: data.items.map(d => ({
+        value: d.callCount, name: d.capability,
+        itemStyle: { color: capColors[d.capability] || '#5B8DEF' },
+      })),
+    }],
+  }
+}
+
+/** Skill 排行（接收 API 数据） */
+export function buildSkillRankOption(data: { skills: Array<{ rank: number; skillName: string; callCount: number; percentage: number }> }): EChartsOption {
+  const sorted = [...data.skills].sort((a, b) => a.callCount - b.callCount)
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 120, right: 30, top: 10, bottom: 25 },
+    xAxis: { type: 'value', ...axisStyle },
+    yAxis: { type: 'category', data: sorted.map(s => s.skillName), ...axisStyle },
+    series: [{
+      type: 'bar',
+      data: sorted.map(s => s.callCount),
+      itemStyle: { borderRadius: [0, 4, 4, 0] },
+      barWidth: '55%',
+      label: { show: true, position: 'right', fontSize: 11, color: '#6B7280' },
+    }] as any[],
+  }
+}
+
+/** 沙箱趋势（接收 API 数据） */
+export function buildSandboxTrendOption(data: { daily: Array<{ date: string; value: number }>; events: Array<{ date: string; value: number }> }): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['拉取总次数', '成功次数'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 50, right: 20, top: 35, bottom: 30 },
+    xAxis: { type: 'category', data: data.daily.map(d => d.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.daily.length / 8)) } },
+    yAxis: { type: 'value', ...axisStyle },
+    series: [
+      { name: '拉取总次数', type: 'line', smooth: true, data: data.daily.map(d => d.value), itemStyle: { color: '#5B8DEF' } },
+      { name: '成功次数', type: 'line', smooth: true, data: data.events.map(d => d.value), itemStyle: { color: '#52C41A' } },
+    ],
+  }
+}
+
+/** 沙箱耗时分布（接收 API 数据） */
+export function buildSandboxDurationOption(data: { buckets: Array<{ label: string; order: number; count: number }> }): EChartsOption {
+  const sorted = [...data.buckets].sort((a, b) => a.order - b.order)
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 50, right: 30, top: 20, bottom: 30 },
+    xAxis: { type: 'category', data: sorted.map(b => b.label), ...axisStyle },
+    yAxis: { type: 'value', name: '次数', ...axisStyle },
+    series: [{
+      type: 'bar',
+      data: sorted.map(b => b.count),
+      itemStyle: { borderRadius: [4, 4, 0, 0] },
+      barWidth: '50%',
+      label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' },
+    }],
+  } as any
+}
+
+/** 沙箱每小时统计（接收 API 数据） */
+export function buildSandboxHourlyOption(data: { points: Array<{ hour: number; count: number }> }): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { left: 45, right: 20, top: 15, bottom: 30 },
+    xAxis: { type: 'category', data: data.points.map(p => p.hour + ':00'), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: 1 } },
+    yAxis: { type: 'value', ...axisStyle },
+    series: [{
+      type: 'bar',
+      data: data.points.map(p => p.count),
+      itemStyle: { borderRadius: [3, 3, 0, 0] },
+      barWidth: '60%',
+    }],
+  } as any
+}
+
+/** 代金券趋势（接收 API 数据） */
+export function buildVoucherTrendOption(data: { points: Array<{ date: string; count: number; amount: number }> }): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['领取人数', '发放金额(元)'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 50, right: 50, top: 35, bottom: 30 },
+    xAxis: { type: 'category', data: data.points.map(p => p.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.points.length / 8)) } },
+    yAxis: [
+      { type: 'value', name: '人数', ...axisStyle },
+      { type: 'value', name: '金额', ...axisStyle },
+    ],
+    series: [
+      { name: '领取人数', type: 'bar', data: data.points.map(p => p.count), itemStyle: { color: '#5B8DEF', borderRadius: [3, 3, 0, 0] }, barWidth: '40%' },
+      { name: '发放金额(元)', type: 'line', yAxisIndex: 1, smooth: true, data: data.points.map(p => p.amount), itemStyle: { color: '#FAAD14' } },
+    ],
+  }
+}
+
+/** 代金券面额分布饼图（接收 API 数据） */
+export function buildVoucherPieOption(data: { items: Array<{ faceAmount: number; claimCount: number; percentage: number }> }): EChartsOption {
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c}人 ({d}%)' },
+    legend: { bottom: 0, textStyle: { fontSize: 11 } },
+    series: [{
+      type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'],
+      itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+      label: { fontSize: 11, formatter: '{b}\n{d}%' },
+      data: data.items.map(d => ({
+        value: d.claimCount, name: '¥' + d.faceAmount,
+        itemStyle: { color: colorPalette[d.faceAmount % colorPalette.length] },
+      })),
+    }],
+  }
+}
+
+/** 活动趋势（接收 API 数据） */
+export function buildActivityTrendOption(data: { chapter1: Array<{ date: string; value: number }>; chapter2: Array<{ date: string; value: number }>; chapter3: Array<{ date: string; value: number }> }): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['初章完成', '第二章完成', '终章完成'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 45, right: 20, top: 35, bottom: 30 },
+    xAxis: { type: 'category', data: data.chapter1.map(d => d.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.chapter1.length / 8)) } },
+    yAxis: { type: 'value', ...axisStyle },
+    series: [
+      { name: '初章完成', type: 'line', smooth: true, data: data.chapter1.map(d => d.value), itemStyle: { color: '#52C41A' } },
+      { name: '第二章完成', type: 'line', smooth: true, data: data.chapter2.map(d => d.value), itemStyle: { color: '#FAAD14' } },
+      { name: '终章完成', type: 'line', smooth: true, data: data.chapter3.map(d => d.value), itemStyle: { color: '#722ED1' } },
+    ],
+  }
+}
+
+/** 活动转化率（接收 API 数据） */
+export function buildActivityConvOption(data: { stages: Array<{ stage: string; rate: number }> }): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 100, right: 40, top: 15, bottom: 25 },
+    xAxis: { type: 'value', max: 100, axisLabel: { ...axisStyle.axisLabel, formatter: '{value}%' }, axisLine: axisStyle.axisLine, splitLine: axisStyle.splitLine },
+    yAxis: { type: 'category', data: data.stages.map(s => s.stage), ...axisStyle },
+    series: [{
+      type: 'bar',
+      data: data.stages.map(s => s.rate),
+      itemStyle: { borderRadius: [0, 4, 4, 0] },
+      barWidth: '50%',
+      label: { show: true, position: 'right', formatter: '{c}%', fontSize: 12, fontWeight: 600, color: '#374151' },
+    }] as any[],
+  }
+}
