@@ -237,37 +237,38 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadBusinessMetrics() {
     loading.value = true
     error.value = null
-    try {
-      await Promise.all([
-        loadDeveloperSummary(),
-        loadDauTrend(),
-        loadAgentDistribution(),
-        loadNpmTrend(),
-        loadNpmSummary(),
-        loadNewUserTrend(),
-        loadDownloadChannelSummary(),
-        loadDownloadChannelDist(),
-        loadDownloadTrend(),
-        loadCapabilitySummary(),
-        loadCapabilityTrend(),
-        loadCapabilityDistribution(),
-        loadSkillRanking(),
-        loadSandboxSummary(),
-        loadSandboxTrend(),
-        loadSandboxDuration(),
-        loadSandboxHourly(),
-        loadVoucherSummary(),
-        loadVoucherTrend(),
-        loadVoucherDistribution(),
-        loadActivitySummary(),
-        loadActivityTrend(),
-        loadActivityConversion(),
-      ])
-    } catch (e: any) {
-      error.value = e.message || 'Failed to load metrics'
-    } finally {
-      loading.value = false
+    const results = await Promise.allSettled([
+      loadDeveloperSummary(),
+      loadDauTrend(),
+      loadAgentDistribution(),
+      loadNpmTrend(),
+      loadNpmSummary(),
+      loadNewUserTrend(),
+      loadDownloadChannelSummary(),
+      loadDownloadChannelDist(),
+      loadDownloadTrend(),
+      loadCapabilitySummary(),
+      loadCapabilityTrend(),
+      loadCapabilityDistribution(),
+      loadSkillRanking(),
+      loadSandboxSummary(),
+      loadSandboxTrend(),
+      loadSandboxDuration(),
+      loadSandboxHourly(),
+      loadVoucherSummary(),
+      loadVoucherTrend(),
+      loadVoucherDistribution(),
+      loadActivitySummary(),
+      loadActivityTrend(),
+      loadActivityConversion(),
+    ])
+    const failures = results.filter(r => r.status === 'rejected')
+    if (failures.length === results.length) {
+      error.value = '所有接口请求失败'
+    } else if (failures.length > 0) {
+      error.value = `${failures.length}/${results.length} 个接口请求失败`
     }
+    loading.value = false
   }
 
   return {

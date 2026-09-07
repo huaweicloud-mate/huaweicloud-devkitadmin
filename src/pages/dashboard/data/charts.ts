@@ -582,15 +582,17 @@ export function buildDownloadTrendOption(data: Array<{ date: string; npmDownload
 /** 开放能力趋势（接收 API 数据） */
 export function buildCapabilityTrendOption(data: { dates: string[]; lines: Array<{ capability: string; data: number[][] }> }): EChartsOption {
   const capColors: Record<string, string> = { Skill: '#5B8DEF', MCP: '#52C41A', CLI: '#FAAD14' }
+  const lines = data?.lines || []
+  const dates = data?.dates || []
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: data.lines.map(l => l.capability), right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: lines.map(l => l.capability), right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 50, right: 20, top: 35, bottom: 30 },
-    xAxis: { type: 'category', data: data.dates, ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.dates.length / 8)) } },
+    xAxis: { type: 'category', data: dates, ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(dates.length / 8)) } },
     yAxis: { type: 'value', ...axisStyle },
-    series: data.lines.map(l => ({
+    series: lines.map(l => ({
       name: l.capability, type: 'line', smooth: true,
-      data: l.data.map(d => d[1]),
+      data: (l?.data || []).map(d => d[1]),
       itemStyle: { color: capColors[l.capability] || '#5B8DEF' },
     })),
   }
@@ -599,6 +601,7 @@ export function buildCapabilityTrendOption(data: { dates: string[]; lines: Array
 /** 开放能力分布饼图（接收 API 数据） */
 export function buildCapabilityPieOption(data: { items: Array<{ capability: string; callCount: number; percentage: number }> }): EChartsOption {
   const capColors: Record<string, string> = { Skill: '#5B8DEF', MCP: '#52C41A', CLI: '#FAAD14', API: '#FF4D4F', SDK: '#E5E7EB', TF: '#D1D5DB' }
+  const items = data?.items || []
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { bottom: 0, textStyle: { fontSize: 11 } },
@@ -606,7 +609,7 @@ export function buildCapabilityPieOption(data: { items: Array<{ capability: stri
       type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'],
       itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
       label: { fontSize: 11 },
-      data: data.items.map(d => ({
+      data: items.map(d => ({
         value: d.callCount, name: d.capability,
         itemStyle: { color: capColors[d.capability] || '#5B8DEF' },
       })),
@@ -616,7 +619,7 @@ export function buildCapabilityPieOption(data: { items: Array<{ capability: stri
 
 /** Skill 排行（接收 API 数据） */
 export function buildSkillRankOption(data: { skills: Array<{ rank: number; skillName: string; callCount: number; percentage: number }> }): EChartsOption {
-  const sorted = [...data.skills].sort((a, b) => a.callCount - b.callCount)
+  const sorted = [...(data?.skills || [])].sort((a, b) => a.callCount - b.callCount)
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: 120, right: 30, top: 10, bottom: 25 },
@@ -634,22 +637,24 @@ export function buildSkillRankOption(data: { skills: Array<{ rank: number; skill
 
 /** 沙箱趋势（接收 API 数据） */
 export function buildSandboxTrendOption(data: { daily: Array<{ date: string; value: number }>; events: Array<{ date: string; value: number }> }): EChartsOption {
+  const daily = data?.daily || []
+  const events = data?.events || []
   return {
     tooltip: { trigger: 'axis' },
     legend: { data: ['拉取总次数', '成功次数'], right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 50, right: 20, top: 35, bottom: 30 },
-    xAxis: { type: 'category', data: data.daily.map(d => d.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.daily.length / 8)) } },
+    xAxis: { type: 'category', data: daily.map(d => d.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(daily.length / 8)) } },
     yAxis: { type: 'value', ...axisStyle },
     series: [
-      { name: '拉取总次数', type: 'line', smooth: true, data: data.daily.map(d => d.value), itemStyle: { color: '#5B8DEF' } },
-      { name: '成功次数', type: 'line', smooth: true, data: data.events.map(d => d.value), itemStyle: { color: '#52C41A' } },
+      { name: '拉取总次数', type: 'line', smooth: true, data: daily.map(d => d.value), itemStyle: { color: '#5B8DEF' } },
+      { name: '成功次数', type: 'line', smooth: true, data: events.map(d => d.value), itemStyle: { color: '#52C41A' } },
     ],
   }
 }
 
 /** 沙箱耗时分布（接收 API 数据） */
 export function buildSandboxDurationOption(data: { buckets: Array<{ label: string; order: number; count: number }> }): EChartsOption {
-  const sorted = [...data.buckets].sort((a, b) => a.order - b.order)
+  const sorted = [...(data?.buckets || [])].sort((a, b) => a.order - b.order)
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: 50, right: 30, top: 20, bottom: 30 },
@@ -667,14 +672,15 @@ export function buildSandboxDurationOption(data: { buckets: Array<{ label: strin
 
 /** 沙箱每小时统计（接收 API 数据） */
 export function buildSandboxHourlyOption(data: { points: Array<{ hour: number; count: number }> }): EChartsOption {
+  const points = data?.points || []
   return {
     tooltip: { trigger: 'axis' },
     grid: { left: 45, right: 20, top: 15, bottom: 30 },
-    xAxis: { type: 'category', data: data.points.map(p => p.hour + ':00'), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: 1 } },
+    xAxis: { type: 'category', data: points.map(p => p.hour + ':00'), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: 1 } },
     yAxis: { type: 'value', ...axisStyle },
     series: [{
       type: 'bar',
-      data: data.points.map(p => p.count),
+      data: points.map(p => p.count),
       itemStyle: { borderRadius: [3, 3, 0, 0] },
       barWidth: '60%',
     }],
@@ -683,24 +689,26 @@ export function buildSandboxHourlyOption(data: { points: Array<{ hour: number; c
 
 /** 代金券趋势（接收 API 数据） */
 export function buildVoucherTrendOption(data: { points: Array<{ date: string; count: number; amount: number }> }): EChartsOption {
+  const points = data?.points || []
   return {
     tooltip: { trigger: 'axis' },
     legend: { data: ['领取人数', '发放金额(元)'], right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 50, right: 50, top: 35, bottom: 30 },
-    xAxis: { type: 'category', data: data.points.map(p => p.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.points.length / 8)) } },
+    xAxis: { type: 'category', data: points.map(p => p.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(points.length / 8)) } },
     yAxis: [
       { type: 'value', name: '人数', ...axisStyle },
       { type: 'value', name: '金额', ...axisStyle },
     ],
     series: [
-      { name: '领取人数', type: 'bar', data: data.points.map(p => p.count), itemStyle: { color: '#5B8DEF', borderRadius: [3, 3, 0, 0] }, barWidth: '40%' },
-      { name: '发放金额(元)', type: 'line', yAxisIndex: 1, smooth: true, data: data.points.map(p => p.amount), itemStyle: { color: '#FAAD14' } },
+      { name: '领取人数', type: 'bar', data: points.map(p => p.count), itemStyle: { color: '#5B8DEF', borderRadius: [3, 3, 0, 0] }, barWidth: '40%' },
+      { name: '发放金额(元)', type: 'line', yAxisIndex: 1, smooth: true, data: points.map(p => p.amount), itemStyle: { color: '#FAAD14' } },
     ],
   }
 }
 
 /** 代金券面额分布饼图（接收 API 数据） */
 export function buildVoucherPieOption(data: { items: Array<{ faceAmount: number; claimCount: number; percentage: number }> }): EChartsOption {
+  const items = data?.items || []
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c}人 ({d}%)' },
     legend: { bottom: 0, textStyle: { fontSize: 11 } },
@@ -708,7 +716,7 @@ export function buildVoucherPieOption(data: { items: Array<{ faceAmount: number;
       type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'],
       itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
       label: { fontSize: 11, formatter: '{b}\n{d}%' },
-      data: data.items.map(d => ({
+      data: items.map(d => ({
         value: d.claimCount, name: '¥' + d.faceAmount,
         itemStyle: { color: colorPalette[d.faceAmount % colorPalette.length] },
       })),
@@ -718,30 +726,34 @@ export function buildVoucherPieOption(data: { items: Array<{ faceAmount: number;
 
 /** 活动趋势（接收 API 数据） */
 export function buildActivityTrendOption(data: { chapter1: Array<{ date: string; value: number }>; chapter2: Array<{ date: string; value: number }>; chapter3: Array<{ date: string; value: number }> }): EChartsOption {
+  const ch1 = data?.chapter1 || []
+  const ch2 = data?.chapter2 || []
+  const ch3 = data?.chapter3 || []
   return {
     tooltip: { trigger: 'axis' },
     legend: { data: ['初章完成', '第二章完成', '终章完成'], right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 45, right: 20, top: 35, bottom: 30 },
-    xAxis: { type: 'category', data: data.chapter1.map(d => d.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.chapter1.length / 8)) } },
+    xAxis: { type: 'category', data: ch1.map(d => d.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(ch1.length / 8)) } },
     yAxis: { type: 'value', ...axisStyle },
     series: [
-      { name: '初章完成', type: 'line', smooth: true, data: data.chapter1.map(d => d.value), itemStyle: { color: '#52C41A' } },
-      { name: '第二章完成', type: 'line', smooth: true, data: data.chapter2.map(d => d.value), itemStyle: { color: '#FAAD14' } },
-      { name: '终章完成', type: 'line', smooth: true, data: data.chapter3.map(d => d.value), itemStyle: { color: '#722ED1' } },
+      { name: '初章完成', type: 'line', smooth: true, data: ch1.map(d => d.value), itemStyle: { color: '#52C41A' } },
+      { name: '第二章完成', type: 'line', smooth: true, data: ch2.map(d => d.value), itemStyle: { color: '#FAAD14' } },
+      { name: '终章完成', type: 'line', smooth: true, data: ch3.map(d => d.value), itemStyle: { color: '#722ED1' } },
     ],
   }
 }
 
 /** 活动转化率（接收 API 数据） */
 export function buildActivityConvOption(data: { stages: Array<{ stage: string; rate: number }> }): EChartsOption {
+  const stages = data?.stages || []
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: 100, right: 40, top: 15, bottom: 25 },
     xAxis: { type: 'value', max: 100, axisLabel: { ...axisStyle.axisLabel, formatter: '{value}%' }, axisLine: axisStyle.axisLine, splitLine: axisStyle.splitLine },
-    yAxis: { type: 'category', data: data.stages.map(s => s.stage), ...axisStyle },
+    yAxis: { type: 'category', data: stages.map(s => s.stage), ...axisStyle },
     series: [{
       type: 'bar',
-      data: data.stages.map(s => s.rate),
+      data: stages.map(s => s.rate),
       itemStyle: { borderRadius: [0, 4, 4, 0] },
       barWidth: '50%',
       label: { show: true, position: 'right', formatter: '{c}%', fontSize: 12, fontWeight: 600, color: '#374151' },
