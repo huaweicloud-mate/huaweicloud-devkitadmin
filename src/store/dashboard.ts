@@ -97,12 +97,12 @@ export interface VoucherDistribution { items: VoucherDistItem[] }
 export interface FunnelStage { name: string; count: number; rate: number }
 export interface ActivitySummary {
   totalParticipants: number
-  chapter1Count: number
-  chapter2Count: number
-  chapter3Count: number
-  c1Rate: number
-  c2Rate: number
-  c3Rate: number
+  chapter1Completed: number
+  chapter2Completed: number
+  chapter3Completed: number
+  chapter1Rate: number
+  chapter2Rate: number
+  chapter3Rate: number
   funnel: FunnelStage[]
 }
 export interface ActivityTrendPoint { date: string; value: number }
