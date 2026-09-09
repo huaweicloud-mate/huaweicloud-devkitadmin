@@ -23,7 +23,7 @@
       <header class="topbar">
         <h2>{{ currentTitle }}</h2>
         <div class="actions">
-          <div class="date-range">📅 数据更新: {{ updateDate }}</div>
+          <div class="date-range">📅 数据截至昨日（{{ updateDate }}）</div>
           <button class="btn-refresh" @click="refreshData" :disabled="refreshing">{{ refreshing ? '🔄 刷新中...' : '🔄 刷新数据' }}</button>
         </div>
       </header>
@@ -61,7 +61,7 @@
             <KpiCard
               label="日活跃数（DAU）"
               :value="fmt(store.developerSummary?.dau)"
-              trend="今日活跃"
+              trend="昨日活跃"
               trend-dir="up"
               accent="cyan"
               icon="☀️"
@@ -94,7 +94,7 @@
             <KpiCard
               label="GitHub 下载/Clone"
               :value="fmt(store.downloadChannelSummary?.githubDownloads)"
-              trend="GitHub Stars+Forks"
+              trend="Git Clone + Release 下载"
               trend-dir="up"
               accent="green"
               icon="🐙"
@@ -121,7 +121,7 @@
         <section v-if="activeSection === 's2'" class="section">
           <div class="kpi-grid">
             <KpiCard
-              label="Skill 调用总次数"
+              label="开放能力调用总次数"
               :value="fmt(store.capabilitySummary?.totalCalls)"
               trend="累计调用"
               trend-dir="up"
@@ -129,16 +129,16 @@
               icon="🛠️"
             />
             <KpiCard
-              label="MCP 调用总次数"
-              :value="fmt(getCapItem('MCP'))"
+              label="Skill 调用总次数"
+              :value="fmt(getCapItem('skill'))"
               trend="累计调用"
               trend-dir="up"
               accent="green"
               icon="🔗"
             />
             <KpiCard
-              label="开放能力调用总次数"
-              :value="fmt(getCapItem('CLI'))"
+              label="MCP 调用总次数"
+              :value="fmt(getCapItem('mcp'))"
               trend="累计调用"
               trend-dir="up"
               accent="orange"
@@ -147,7 +147,7 @@
           </div>
           <div class="chart-row two">
             <ChartCard title="调用次数趋势（Skill / MCP / 开放能力）" desc="近14天 Skill调用、MCP调用、开放能力调用次数趋势" :option="capTrendOpt" />
-            <ChartCard title="开放能力调用占比分布" desc="MCP / CLI / Skill 调用占比" :option="capPieOpt" />
+            <ChartCard title="开放能力调用占比分布" desc="MCP / CLI 调用占比" :option="capPieOpt" />
           </div>
           <div class="chart-row one">
             <ChartCard title="Skill 明细调用排行（Top 10）" desc="通过插件调用各Skill的次数排行" :option="skillRankOpt" :height="320" />
@@ -342,7 +342,8 @@ function chainDir(rate: number | undefined | null): 'flat' | 'up' | 'down' {
 
 const updateDate = computed(() => {
   const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} 08:00`
+  d.setDate(d.getDate() - 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
 const activeSection = ref('s1')
