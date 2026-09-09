@@ -23,7 +23,7 @@
       <header class="topbar">
         <h2>{{ currentTitle }}</h2>
         <div class="actions">
-          <div class="date-range">📅 数据更新: {{ updateDate }}</div>
+          <div class="date-range">📅 数据截至昨日（{{ updateDate }}）</div>
           <button class="btn-refresh" @click="refreshData" :disabled="refreshing">{{ refreshing ? '🔄 刷新中...' : '🔄 刷新数据' }}</button>
         </div>
       </header>
@@ -61,7 +61,7 @@
             <KpiCard
               label="日活跃数（DAU）"
               :value="fmt(store.developerSummary?.dau)"
-              trend="今日活跃"
+              trend="昨日活跃"
               trend-dir="up"
               accent="cyan"
               icon="☀️"
@@ -351,7 +351,8 @@ function chainDir(rate: number | undefined | null): 'flat' | 'up' | 'down' {
 
 const updateDate = computed(() => {
   const d = new Date()
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')} 08:00`
+  d.setDate(d.getDate() - 1)
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 })
 
 const activeSection = ref('s1')
