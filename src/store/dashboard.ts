@@ -60,7 +60,6 @@ export interface SandboxSummary {
   chainRatio: number
   avgSec: number
   avgDeltaSec: number
-  p95Sec: number
   sla: string
 }
 export interface SandboxTrendPoint { date: string; value: number }
