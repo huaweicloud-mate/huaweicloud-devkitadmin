@@ -94,7 +94,7 @@
             <KpiCard
               label="GitHub 下载/Clone"
               :value="fmt(store.downloadChannelSummary?.githubDownloads)"
-              trend="GitHub Stars+Forks"
+              trend="Git Clone + Release 下载"
               trend-dir="up"
               accent="green"
               icon="🐙"
