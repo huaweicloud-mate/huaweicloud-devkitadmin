@@ -345,7 +345,7 @@ export function getActivityFunnelOption(): EChartsOption {
       data: [
         { value: 8421, name: '参与活动' },
         { value: 5234, name: '初章完成' },
-        { value: 2876, name: '第二章完成' },
+        { value: 2876, name: '进阶章完成' },
         { value: 1423, name: '终章完成' },
       ],
     }] as any[],
@@ -355,13 +355,13 @@ export function getActivityFunnelOption(): EChartsOption {
 export function getActivityTrendOption(): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['初章完成', '第二章完成', '终章完成'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: ['初章完成', '进阶章完成', '终章完成'], right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 45, right: 20, top: 35, bottom: 30 },
     xAxis: { type: 'category', data: genDates(14), ...axisStyle },
     yAxis: { type: 'value', ...axisStyle },
     series: [
       { name: '初章完成', type: 'line', smooth: true, data: genData(14, 180, 30), itemStyle: { color: '#52C41A' } },
-      { name: '第二章完成', type: 'line', smooth: true, data: genData(14, 95, 20), itemStyle: { color: '#FAAD14' } },
+      { name: '进阶章完成', type: 'line', smooth: true, data: genData(14, 95, 20), itemStyle: { color: '#FAAD14' } },
       { name: '终章完成', type: 'line', smooth: true, data: genData(14, 45, 10), itemStyle: { color: '#722ED1' } },
     ],
   }
@@ -729,13 +729,13 @@ export function buildActivityTrendOption(data: { chapter1: Array<{ date: string;
   const ch3 = data?.chapter3 || []
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['初章完成', '第二章完成', '终章完成'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: ['初章完成', '进阶章完成', '终章完成'], right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 45, right: 20, top: 35, bottom: 30 },
     xAxis: { type: 'category', data: ch1.map(d => d.date), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(ch1.length / 8)) } },
     yAxis: { type: 'value', ...axisStyle },
     series: [
       { name: '初章完成', type: 'line', smooth: true, data: ch1.map(d => d.value), itemStyle: { color: '#52C41A' } },
-      { name: '第二章完成', type: 'line', smooth: true, data: ch2.map(d => d.value), itemStyle: { color: '#FAAD14' } },
+      { name: '进阶章完成', type: 'line', smooth: true, data: ch2.map(d => d.value), itemStyle: { color: '#FAAD14' } },
       { name: '终章完成', type: 'line', smooth: true, data: ch3.map(d => d.value), itemStyle: { color: '#722ED1' } },
     ],
   }
