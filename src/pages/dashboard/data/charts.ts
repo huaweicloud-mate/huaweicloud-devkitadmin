@@ -89,14 +89,13 @@ export function getAgentTypeOption(): EChartsOption {
 export function getDownloadTrendOption(): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['GitHub', 'npm', '市场'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: ['GitHub', 'npm'], right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 45, right: 20, top: 35, bottom: 30 },
     xAxis: { type: 'category', data: genDates(30), ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: 4 } },
     yAxis: { type: 'value', ...axisStyle },
     series: [
       { name: 'GitHub', type: 'line', smooth: true, data: genData(30, 1050, 180), itemStyle: { color: '#5B8DEF' } },
       { name: 'npm', type: 'line', smooth: true, data: genData(30, 1400, 220), itemStyle: { color: '#52C41A' } },
-      { name: '市场', type: 'line', smooth: true, data: genData(30, 450, 80), itemStyle: { color: '#FAAD14' } },
     ],
   }
 }
@@ -125,7 +124,6 @@ export function getDownloadPieOption(): EChartsOption {
       data: [
         { value: 32104, name: 'GitHub', itemStyle: { color: '#5B8DEF' } },
         { value: 41890, name: 'npm', itemStyle: { color: '#52C41A' } },
-        { value: 13568, name: '市场', itemStyle: { color: '#FAAD14' } },
       ],
     }],
   }
@@ -374,7 +372,7 @@ export function getActivityConvOption(): EChartsOption {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: 100, right: 40, top: 15, bottom: 25 },
     xAxis: { type: 'value', max: 100, axisLabel: { ...axisStyle.axisLabel, formatter: '{value}%' }, axisLine: axisStyle.axisLine, splitLine: axisStyle.splitLine },
-    yAxis: { type: 'category', data: ['参与→初章', '初章→第二章', '第二章→终章', '整体(参与→终章)'], ...axisStyle },
+    yAxis: { type: 'category', data: ['参与→初章', '初章→进阶章', '进阶章→终章', '整体(参与→终章)'], ...axisStyle },
     series: [{
       type: 'bar', data: [62.2, 55.0, 49.4, 16.9],
       itemStyle: { borderRadius: [0, 4, 4, 0] },
@@ -744,13 +742,13 @@ export function buildActivityTrendOption(data: { chapter1: Array<{ date: string;
 }
 
 /** 活动转化率（接收 API 数据） */
-export function buildActivityConvOption(data: { stages: Array<{ stage: string; rate: number }> }): EChartsOption {
+export function buildActivityConvOption(data: { stages: Array<{ label: string; rate: number }> }): EChartsOption {
   const stages = data?.stages || []
   return {
     tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
     grid: { left: 100, right: 40, top: 15, bottom: 25 },
     xAxis: { type: 'value', max: 100, axisLabel: { ...axisStyle.axisLabel, formatter: '{value}%' }, axisLine: axisStyle.axisLine, splitLine: axisStyle.splitLine },
-    yAxis: { type: 'category', data: stages.map(s => s.stage), ...axisStyle },
+    yAxis: { type: 'category', data: stages.map(s => s.label), ...axisStyle },
     series: [{
       type: 'bar',
       data: stages.map(s => s.rate),

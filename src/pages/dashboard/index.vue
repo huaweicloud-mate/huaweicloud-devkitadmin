@@ -94,8 +94,8 @@
             <KpiCard
               label="GitHub 下载/Clone"
               :value="fmt(store.downloadChannelSummary?.githubDownloads)"
-              trend="GitHub 数据接入中"
-              trend-dir="flat"
+              trend="GitHub Stars+Forks"
+              trend-dir="up"
               accent="green"
               icon="🐙"
             />
@@ -279,7 +279,7 @@
               icon="📖"
             />
             <KpiCard
-              label="第二章完成人数"
+              label="进阶章完成人数"
               :value="fmt(store.activitySummary?.chapter2Completed)"
       :trend="'完成率 ' + (store.activitySummary?.chapter2Rate ?? 0) + '%'"
               trend-dir="flat"
@@ -298,7 +298,7 @@
           <div class="chart-row one">
             <div class="chart-card">
               <div class="chart-title">活动转化漏斗</div>
-              <div class="chart-desc">参与 → 初章完成 → 第二章完成 → 终章完成 各阶段转化率分析</div>
+              <div class="chart-desc">参与 → 初章完成 → 进阶章完成 → 终章完成 各阶段转化率分析</div>
               <div ref="funnelRef" :style="{ height: '380px' }"></div>
             </div>
           </div>
