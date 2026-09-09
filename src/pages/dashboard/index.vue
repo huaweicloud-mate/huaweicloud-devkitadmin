@@ -121,7 +121,7 @@
         <section v-if="activeSection === 's2'" class="section">
           <div class="kpi-grid">
             <KpiCard
-              label="Skill 调用总次数"
+              label="开放能力调用总次数"
               :value="fmt(store.capabilitySummary?.totalCalls)"
               trend="累计调用"
               trend-dir="up"
@@ -129,16 +129,16 @@
               icon="🛠️"
             />
             <KpiCard
-              label="MCP 调用总次数"
-              :value="fmt(getCapItem('MCP'))"
+              label="Skill 调用总次数"
+              :value="fmt(getCapItem('skill'))"
               trend="累计调用"
               trend-dir="up"
               accent="green"
               icon="🔗"
             />
             <KpiCard
-              label="开放能力调用总次数"
-              :value="fmt(getCapItem('CLI'))"
+              label="MCP 调用总次数"
+              :value="fmt(getCapItem('mcp'))"
               trend="累计调用"
               trend-dir="up"
               accent="orange"
@@ -147,7 +147,7 @@
           </div>
           <div class="chart-row two">
             <ChartCard title="调用次数趋势（Skill / MCP / 开放能力）" desc="近14天 Skill调用、MCP调用、开放能力调用次数趋势" :option="capTrendOpt" />
-            <ChartCard title="开放能力调用占比分布" desc="MCP / CLI / Skill 调用占比" :option="capPieOpt" />
+            <ChartCard title="开放能力调用占比分布" desc="MCP / CLI 调用占比" :option="capPieOpt" />
           </div>
           <div class="chart-row one">
             <ChartCard title="Skill 明细调用排行（Top 10）" desc="通过插件调用各Skill的次数排行" :option="skillRankOpt" :height="320" />

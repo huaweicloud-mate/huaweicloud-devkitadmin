@@ -141,7 +141,7 @@ export function getCapabilityTrendOption(): EChartsOption {
     series: [
       { name: 'Skill调用', type: 'line', smooth: true, data: genData(14, 11000, 1800), itemStyle: { color: '#5B8DEF' } },
       { name: 'MCP调用', type: 'line', smooth: true, data: genData(14, 6400, 1000), itemStyle: { color: '#52C41A' } },
-      { name: '开放能力调用', type: 'line', smooth: true, data: genData(14, 9500, 1400), itemStyle: { color: '#FAAD14' } },
+      { name: '开放能力调用', type: 'line', smooth: true, data: genData(14, 17400, 2400), itemStyle: { color: '#722ED1' } },
     ],
   }
 }
@@ -155,12 +155,8 @@ export function getCapabilityPieOption(): EChartsOption {
       itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
       label: { fontSize: 11 },
       data: [
-        { value: 156832, name: 'Skill', itemStyle: { color: '#5B8DEF' } },
         { value: 89241, name: 'MCP', itemStyle: { color: '#52C41A' } },
         { value: 43567, name: 'CLI', itemStyle: { color: '#FAAD14' } },
-        { value: 0, name: 'API (暂无)', itemStyle: { color: '#FF4D4F' } },
-        { value: 0, name: 'SDK (暂无)', itemStyle: { color: '#E5E7EB' } },
-        { value: 0, name: 'TF (暂无)', itemStyle: { color: '#D1D5DB' } },
       ],
     }],
   }
@@ -579,27 +575,39 @@ export function buildDownloadTrendOption(data: Array<{ date: string; npmDownload
 
 /** 开放能力趋势（接收 API 数据） */
 export function buildCapabilityTrendOption(data: { dates: string[]; lines: Array<{ capability: string; data: number[][] }> }): EChartsOption {
-  const capColors: Record<string, string> = { Skill: '#5B8DEF', MCP: '#52C41A', CLI: '#FAAD14' }
-  const lines = data?.lines || []
+  const lineColors: Record<string, string> = { skill: '#5B8DEF', mcp: '#52C41A', total: '#722ED1' }
+  const lineNames: Record<string, string> = { skill: 'Skill调用', mcp: 'MCP调用', total: '开放能力调用' }
+  const allLines = data?.lines || []
   const dates = data?.dates || []
+
+  const byCap = new Map(allLines.map(l => [l.capability, (l?.data || []).map(d => d[1])]))
+  const totalLine = dates.map((_, i) =>
+    (byCap.get('skill')?.[i] ?? 0) + (byCap.get('mcp')?.[i] ?? 0) + (byCap.get('cli')?.[i] ?? 0),
+  )
+
+  const lines: Array<{ key: string; data: number[] }> = [
+    { key: 'skill', data: byCap.get('skill') || [] },
+    { key: 'mcp', data: byCap.get('mcp') || [] },
+    { key: 'total', data: totalLine },
+  ]
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: lines.map(l => l.capability), right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: lines.map(l => lineNames[l.key]), right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 50, right: 20, top: 35, bottom: 30 },
     xAxis: { type: 'category', data: dates, ...axisStyle, axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(dates.length / 8)) } },
     yAxis: { type: 'value', ...axisStyle },
     series: lines.map(l => ({
-      name: l.capability, type: 'line', smooth: true,
-      data: (l?.data || []).map(d => d[1]),
-      itemStyle: { color: capColors[l.capability] || '#5B8DEF' },
+      name: lineNames[l.key], type: 'line', smooth: true,
+      data: l.data,
+      itemStyle: { color: lineColors[l.key] || '#5B8DEF' },
     })),
   }
 }
 
-/** 开放能力分布饼图（接收 API 数据） */
+/** 开放能力分布饼图（接收 API 数据，仅展示 MCP / CLI 占比） */
 export function buildCapabilityPieOption(data: { items: Array<{ capability: string; callCount: number; percentage: number }> }): EChartsOption {
-  const capColors: Record<string, string> = { Skill: '#5B8DEF', MCP: '#52C41A', CLI: '#FAAD14', API: '#FF4D4F', SDK: '#E5E7EB', TF: '#D1D5DB' }
-  const items = data?.items || []
+  const capColors: Record<string, string> = { mcp: '#52C41A', cli: '#FAAD14' }
+  const items = (data?.items || []).filter(d => d.capability === 'mcp' || d.capability === 'cli')
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { bottom: 0, textStyle: { fontSize: 11 } },
