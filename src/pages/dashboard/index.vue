@@ -182,15 +182,6 @@
               accent="orange"
               icon="⏱️"
             />
-            <KpiCard
-              label="P95 创建耗时"
-              :value="store.sandboxSummary?.p95Sec?.toFixed(1) ?? '--'"
-              unit="秒"
-              :trend="'SLA: ' + (store.sandboxSummary?.sla || '<20s')"
-              trend-dir="flat"
-              accent="purple"
-              icon="📈"
-            />
           </div>
           <div class="chart-row two">
             <ChartCard title="沙箱拉取次数趋势（近30天）" desc="每日沙箱拉取总次数与成功次数对比" :option="sandboxTrendOpt" />
