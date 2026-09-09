@@ -106,7 +106,7 @@ export interface ActivityTrend {
   chapter2: ActivityTrendPoint[]
   chapter3: ActivityTrendPoint[]
 }
-export interface ConvItem { stage: string; rate: number }
+export interface ConvItem { label: string; rate: number }
 export interface ActivityConversion { stages: ConvItem[] }
 
 export const useDashboardStore = defineStore('dashboard', () => {
