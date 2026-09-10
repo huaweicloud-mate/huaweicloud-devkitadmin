@@ -375,7 +375,7 @@ export function buildActivityFunnelOption(
       label: {
         show: true,
         position: 'right',
-        formatter: '{name|{b}}\n{val|{c} 人} {rate|{@rate}%%}',
+        formatter: (p: any) => `{name|${p.name}}\n{val|${p.value.toLocaleString()} 人} {rate|${p.data.rate}%}`,
         rich: {
           name: { fontSize: 13, color: '#374151', fontWeight: 600, lineHeight: 22 },
           val: { fontSize: 14, color: '#111827', fontWeight: 700, lineHeight: 22 },
