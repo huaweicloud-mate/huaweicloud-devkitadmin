@@ -6,6 +6,8 @@ const axisStyle = {
   splitLine: { lineStyle: { color: '#F3F4F6' } },
 }
 
+const colorPalette = ['#5B8DEF', '#52C41A', '#FAAD14', '#722ED1', '#13C2C2']
+
 /** 数据为空时的占位图 */
 export function getEmptyChartOption(): EChartsOption {
   return {
@@ -74,11 +76,48 @@ export function buildAgentDistributionOption(data: Array<{ name: string; count: 
   }
 }
 
-/** npm 下载量趋势折线图（接收 API 数据） */
-export function buildNpmTrendOption(data: Array<{ date: string; downloads: number }>): EChartsOption {
+/** 新增用户趋势（柱状 + 环比/同比双折线，接收 API 数据） */
+export function buildNewUserTrendOption(data: Array<{ month: string; newUserCount: number; momRate: number | null; yoyRate: number | null }>): EChartsOption {
   return {
     tooltip: { trigger: 'axis' },
-    grid: { left: 45, right: 20, top: 20, bottom: 30 },
+    legend: { data: ['新增用户', '环比增长%', '同比增长%'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 45, right: 45, top: 35, bottom: 30 },
+    xAxis: { type: 'category', data: data.map(d => d.month), ...axisStyle },
+    yAxis: [
+      { type: 'value', name: '人数', ...axisStyle },
+      { type: 'value', name: '增长率%', ...axisStyle, axisLabel: { ...axisStyle.axisLabel, formatter: '{value}%' } },
+    ],
+    series: [
+      { name: '新增用户', type: 'bar', data: data.map(d => d.newUserCount), itemStyle: { color: '#5B8DEF', borderRadius: [4, 4, 0, 0] }, barWidth: '40%' },
+      { name: '环比增长%', type: 'line', yAxisIndex: 1, data: data.map(d => d.momRate), itemStyle: { color: '#52C41A' } },
+      { name: '同比增长%', type: 'line', yAxisIndex: 1, data: data.map(d => d.yoyRate), itemStyle: { color: '#FAAD14' } },
+    ],
+  }
+}
+
+/** 下载渠道占比饼图（接收 API 数据） */
+export function buildDownloadPieOption(data: Array<{ channel: string; count: number; percentage: number }>): EChartsOption {
+  return {
+    tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+    series: [{
+      type: 'pie', radius: ['45%', '70%'], center: ['50%', '52%'],
+      itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+      label: { fontSize: 11, formatter: '{b}\n{d}%' },
+      data: data.map((d, i) => ({
+        value: d.count,
+        name: d.channel,
+        itemStyle: { color: colorPalette[i % colorPalette.length] },
+      })),
+    }],
+  }
+}
+
+/** 插件下载量趋势（GitHub + npm 双折线，接收 API 数据） */
+export function buildDownloadTrendOption(data: Array<{ date: string; npmDownloads: number; githubDownloads: number | null }>): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['GitHub', 'npm'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 45, right: 20, top: 35, bottom: 30 },
     xAxis: {
       type: 'category',
       data: data.map(d => d.date),
@@ -86,19 +125,10 @@ export function buildNpmTrendOption(data: Array<{ date: string; downloads: numbe
       axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(data.length / 8)) },
     },
     yAxis: { type: 'value', ...axisStyle },
-    series: [{
-      name: 'npm下载量',
-      type: 'line',
-      smooth: true,
-      data: data.map(d => d.downloads),
-      itemStyle: { color: '#FAAD14' },
-      areaStyle: {
-        color: {
-          type: 'linear', x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [{ offset: 0, color: 'rgba(250,173,20,0.25)' }, { offset: 1, color: 'rgba(250,173,20,0)' }],
-        },
-      },
-    }],
+    series: [
+      { name: 'GitHub', type: 'line', smooth: true, data: data.map(d => d.githubDownloads), itemStyle: { color: '#5B8DEF' } },
+      { name: 'npm', type: 'line', smooth: true, data: data.map(d => d.npmDownloads), itemStyle: { color: '#52C41A' } },
+    ],
   }
 }
 
