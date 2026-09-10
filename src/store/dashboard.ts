@@ -52,6 +52,8 @@ export interface CapabilitySummary {
   uniqueUsers: number
   dailyAvgCalls: number
   todayCalls: number
+  skillCalls: number
+  mcpCalls: number
 }
 
 export interface CapabilityTrendItem {
