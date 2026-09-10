@@ -126,7 +126,7 @@
             <KpiCard label="MCP 调用总次数" :value="fmt(store.capabilitySummary?.mcpCalls)" trend="累计调用" trend-dir="up" accent="orange" icon="⚡" />
           </div>
           <div class="chart-row two">
-            <ChartCard title="调用次数趋势（Skill / MCP / 开放能力）" desc="近14天 Skill调用、MCP调用、开放能力调用次数趋势" :option="capTrendOpt" />
+            <ChartCard title="调用次数趋势（Skill / MCP / CLI）" desc="近14天 Skill调用、MCP调用、CLI调用次数趋势" :option="capTrendOpt" />
             <ChartCard title="开放能力调用占比分布" desc="Skill / MCP / CLI 累计调用占比" :option="capPieOpt" />
           </div>
           <div class="chart-row one">
@@ -146,9 +146,9 @@
               icon="📦"
             />
             <KpiCard
-              label="今日沙箱用户数"
+              label="昨日沙箱用户数"
               :value="fmt(store.sandboxSummary?.dailyUsers)"
-              :trend="`↑ ${store.sandboxSummary?.dailyUsersChainRatio?.toFixed(1) ?? '--'}% 较昨日`"
+              :trend="`↑ ${store.sandboxSummary?.dailyUsersChainRatio?.toFixed(1) ?? '--'}% 较前日`"
               trend-dir="up"
               accent="green"
               icon="📅"
@@ -157,7 +157,7 @@
               label="平均拉起耗时"
               :value="store.sandboxSummary?.avgDurationSec?.toFixed(1) ?? '--'"
               unit="秒"
-              :trend="`${store.sandboxSummary?.avgDurationDeltaSec != null && store.sandboxSummary.avgDurationDeltaSec >= 0 ? '↑' : '↓'} ${Math.abs(store.sandboxSummary?.avgDurationDeltaSec ?? 0).toFixed(1)}s 较昨日`"
+              :trend="`${store.sandboxSummary?.avgDurationDeltaSec != null && store.sandboxSummary.avgDurationDeltaSec >= 0 ? '↑' : '↓'} ${Math.abs(store.sandboxSummary?.avgDurationDeltaSec ?? 0).toFixed(1)}s 较前日`"
               :trend-dir="store.sandboxSummary?.avgDurationDeltaSec != null && store.sandboxSummary.avgDurationDeltaSec >= 0 ? 'up' : 'down'"
               accent="orange"
               icon="⏱️"
@@ -168,7 +168,7 @@
             <ChartCard title="沙箱拉起耗时分布（近30天）" desc="近30天拉起耗时区间分布（秒），监控性能瓶颈" :option="sandboxDurationOpt" />
           </div>
           <div class="chart-row one">
-            <ChartCard title="每小时沙箱用户数（今日）" desc="今日各时段沙箱去重用户数分布，识别使用高峰" :option="sandboxHourlyOpt" :height="260" />
+            <ChartCard title="每小时沙箱用户数（昨日）" desc="昨日各时段沙箱去重用户数分布，识别使用高峰" :option="sandboxHourlyOpt" :height="260" />
           </div>
         </section>
 
@@ -192,17 +192,17 @@
               icon="💰"
             />
             <KpiCard
-              label="今日领取人数"
-              :value="fmt(store.voucherSummary?.todayCount)"
-              :trend="`↑ ${store.voucherSummary?.todayCountChainRatio?.toFixed(1) ?? '--'}% 较昨日`"
+              label="昨日领取人数"
+              :value="fmt(store.voucherSummary?.yesterdayCount)"
+              :trend="`↑ ${store.voucherSummary?.yesterdayCountChainRatio?.toFixed(1) ?? '--'}% 较前日`"
               trend-dir="up"
               accent="orange"
               icon="📅"
             />
             <KpiCard
-              label="今日发放金额"
-              :value="fmtYuanWithSymbol(store.voucherSummary?.todayAmount)"
-              :trend="`↑ ${store.voucherSummary?.todayAmountChainRatio?.toFixed(1) ?? '--'}% 较昨日`"
+              label="昨日发放金额"
+              :value="fmtYuanWithSymbol(store.voucherSummary?.yesterdayAmount)"
+              :trend="`↑ ${store.voucherSummary?.yesterdayAmountChainRatio?.toFixed(1) ?? '--'}% 较前日`"
               trend-dir="up"
               accent="cyan"
               icon="💵"
