@@ -122,8 +122,8 @@
         <section v-if="activeSection === 's2'" class="section">
           <div class="kpi-grid">
             <KpiCard label="开放能力调用总次数" :value="fmt(store.capabilitySummary?.totalCalls)" trend="累计调用" trend-dir="up" accent="blue" icon="🛠️" />
-            <KpiCard label="Skill 调用总次数" :value="fmt(getCapItem('skill'))" trend="累计调用" trend-dir="up" accent="green" icon="🔗" />
-            <KpiCard label="MCP 调用总次数" :value="fmt(getCapItem('mcp'))" trend="累计调用" trend-dir="up" accent="orange" icon="⚡" />
+            <KpiCard label="Skill 调用总次数" :value="fmt(store.capabilitySummary?.skillCalls)" trend="累计调用" trend-dir="up" accent="green" icon="🔗" />
+            <KpiCard label="MCP 调用总次数" :value="fmt(store.capabilitySummary?.mcpCalls)" trend="累计调用" trend-dir="up" accent="orange" icon="⚡" />
           </div>
           <div class="chart-row two">
             <ChartCard title="调用次数趋势（Skill / MCP / 开放能力）" desc="近14天 Skill调用、MCP调用、开放能力调用次数趋势" :option="capTrendOpt" />
@@ -428,13 +428,6 @@ const downloadTrendOpt = computed(() =>
     ? buildDownloadTrendOption(store.downloadTrend)
     : getEmptyChartOption()
 )
-
-function getCapItem(capName: string): number | undefined {
-  const items = store.capabilityDistribution
-  if (!items || !items.length) return undefined
-  const item = items.find(i => i.capability === capName)
-  return item?.callCount
-}
 
 const capTrendOpt = computed(() =>
   store.capabilityTrend.length
