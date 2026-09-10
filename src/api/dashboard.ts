@@ -17,14 +17,24 @@ export function getAgentDistribution() {
   return http.get(`${BASE}/agent/distribution`)
 }
 
-/** 下载量趋势 */
-export function getNpmDownloadTrend(days = 30) {
+/** 新增用户趋势（近6个月环比/同比） */
+export function getNewUserTrend() {
+  return http.get(`${BASE}/developer/new-user-trend`)
+}
+
+/** 插件下载量趋势（GitHub + npm） */
+export function getDownloadTrend(days = 30) {
   return http.get(`${BASE}/download/trend`, { params: { days } })
 }
 
 /** 下载渠道总量（npm / GitHub） */
 export function getDownloadChannelSummary() {
   return http.get(`${BASE}/download/channel-summary`)
+}
+
+/** 下载渠道占比分布 */
+export function getDownloadChannelDistribution() {
+  return http.get(`${BASE}/download/channel-distribution`)
 }
 
 // ======================== 开放能力 ========================

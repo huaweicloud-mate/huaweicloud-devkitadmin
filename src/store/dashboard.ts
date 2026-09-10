@@ -22,9 +22,23 @@ export interface AgentDistributionItem {
   count: number
 }
 
-export interface NpmTrendItem {
+export interface NewUserTrendItem {
+  month: string
+  newUserCount: number
+  momRate: number | null
+  yoyRate: number | null
+}
+
+export interface DownloadChannelItem {
+  channel: string
+  count: number
+  percentage: number
+}
+
+export interface DownloadTrendItem {
   date: string
-  downloads: number
+  npmDownloads: number
+  githubDownloads: number | null
 }
 
 export interface DownloadChannelSummary {
@@ -186,7 +200,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const developerSummary = ref<DeveloperSummary | null>(null)
   const dauTrend = ref<DauTrendItem[]>([])
   const agentDistribution = ref<AgentDistributionItem[]>([])
-  const npmTrend = ref<NpmTrendItem[]>([])
+  const newUserTrend = ref<NewUserTrendItem[]>([])
+  const downloadChannelDist = ref<DownloadChannelItem[]>([])
+  const downloadTrend = ref<DownloadTrendItem[]>([])
   const downloadChannelSummary = ref<DownloadChannelSummary | null>(null)
   const capabilitySummary = ref<CapabilitySummary | null>(null)
   const capabilityTrend = ref<CapabilityTrendItem[]>([])
@@ -228,9 +244,27 @@ export const useDashboardStore = defineStore('dashboard', () => {
     agentDistribution.value = raw?.agents ?? raw ?? []
   }
 
-  async function loadNpmTrend(days = 30) {
-    const raw: any = await api.getNpmDownloadTrend(days)
-    npmTrend.value = raw?.npmDaily ?? raw ?? []
+  async function loadNewUserTrend() {
+    const raw: any = await api.getNewUserTrend()
+    newUserTrend.value = raw?.months ?? raw ?? []
+  }
+
+  async function loadDownloadChannelDist() {
+    const raw: any = await api.getDownloadChannelDistribution()
+    downloadChannelDist.value = raw?.channels ?? raw ?? []
+  }
+
+  async function loadDownloadTrend(days = 30) {
+    const raw: any = await api.getDownloadTrend(days)
+    const npmDaily: Array<{ date: string; downloads: number }> = raw?.npmDaily ?? []
+    const githubDaily: Array<{ date: string; downloads: number }> = raw?.githubDaily ?? []
+    const githubMap = new Map(githubDaily.map(p => [p.date, p.downloads]))
+    const dates = new Set([...npmDaily.map(p => p.date), ...githubDaily.map(p => p.date)])
+    downloadTrend.value = [...dates].sort().map(date => ({
+      date,
+      npmDownloads: npmDaily.find(p => p.date === date)?.downloads ?? 0,
+      githubDownloads: githubMap.get(date) ?? null,
+    }))
   }
 
   async function loadDownloadChannelSummary() {
@@ -330,8 +364,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
         loadDeveloperSummary(),
         loadDauTrend(),
         loadAgentDistribution(),
-        loadNpmTrend(),
+        loadNewUserTrend(),
         loadDownloadChannelSummary(),
+        loadDownloadChannelDist(),
+        loadDownloadTrend(),
         loadCapabilitySummary(),
         loadCapabilityTrend(),
         loadCapabilityDistribution(),
@@ -358,7 +394,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     developerSummary,
     dauTrend,
     agentDistribution,
-    npmTrend,
+    newUserTrend,
+    downloadChannelDist,
+    downloadTrend,
     downloadChannelSummary,
     capabilitySummary,
     capabilityTrend,
@@ -379,7 +417,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loadDeveloperSummary,
     loadDauTrend,
     loadAgentDistribution,
-    loadNpmTrend,
+    loadNewUserTrend,
+    loadDownloadChannelDist,
+    loadDownloadTrend,
     loadDownloadChannelSummary,
     loadCapabilitySummary,
     loadCapabilityTrend,

@@ -76,33 +76,45 @@
               icon="🌙"
             />
           </div>
-          <div class="chart-row one">
+          <div class="chart-row two">
             <ChartCard title="DAU / MAU 趋势（近30天）" desc="日活和月活趋势" :option="dauTrendOpt" :height="320" />
+            <ChartCard title="新增用户趋势（环比 vs 同比）" desc="近6个月每月新增用户及增长率" :option="newUserTrendOpt" :height="320" />
           </div>
 
-          <!-- 插件相关 -->
-          <div class="sub-section-title" style="margin-top:24px">插件相关</div>
+          <!-- 插件的开发者画像 -->
+          <div class="sub-section-title" style="margin-top:24px">插件的开发者画像</div>
           <div class="kpi-grid">
             <KpiCard
-              label="npm 下载总量"
-              :value="fmt(store.downloadChannelSummary?.npmDownloads)"
-              trend="累计总量"
+              label="插件总下载量"
+              :value="fmt(store.downloadChannelSummary?.totalDownloads)"
+              trend="GitHub + npm 累计"
               trend-dir="up"
               accent="blue"
               icon="📦"
             />
             <KpiCard
-              label="GitHub 下载总量"
+              label="GitHub 下载/Clone"
               :value="fmt(store.downloadChannelSummary?.githubDownloads)"
               trend="Clone + Release 累计"
               trend-dir="up"
               accent="green"
-              icon="⬇️"
+              icon="🐙"
+            />
+            <KpiCard
+              label="npm 下载量"
+              :value="fmt(store.downloadChannelSummary?.npmDownloads)"
+              trend="npm 累计下载"
+              trend-dir="up"
+              accent="orange"
+              icon="📊"
             />
           </div>
           <div class="chart-row two">
             <ChartCard title="Agent 接入数量（按种类分布）" desc="按Agent名称合并统计（不区分平台）" :option="agentDistOpt" :height="320" />
-            <ChartCard title="npm 下载量趋势" desc="近30天npm下载量趋势（每日采集）" :option="npmTrendOpt" :height="320" />
+            <ChartCard title="下载渠道占比" desc="GitHub vs npm 下载量占比分布" :option="downloadPieOpt" :height="320" />
+          </div>
+          <div class="chart-row one">
+            <ChartCard title="插件下载量趋势（GitHub + npm）" desc="近30天 GitHub 与 npm 下载量趋势" :option="downloadTrendOpt" :height="320" />
           </div>
         </section>
 
@@ -285,7 +297,8 @@ import AlertBanner from './components/AlertBanner.vue'
 import { useDashboardStore, fmtYuanWithSymbol } from '@/store/dashboard'
 import {
   getEmptyChartOption,
-  buildDauTrendOption, buildAgentDistributionOption, buildNpmTrendOption,
+  buildDauTrendOption, buildAgentDistributionOption, buildNewUserTrendOption,
+  buildDownloadPieOption, buildDownloadTrendOption,
   buildCapabilityTrendOption, buildCapabilityPieOption, buildSkillRankOption,
   buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
   buildVoucherTrendOption, buildVoucherPieOption,
@@ -400,9 +413,19 @@ const agentDistOpt = computed(() =>
     ? buildAgentDistributionOption(store.agentDistribution)
     : getEmptyChartOption()
 )
-const npmTrendOpt = computed(() =>
-  store.npmTrend.length
-    ? buildNpmTrendOption(store.npmTrend)
+const newUserTrendOpt = computed(() =>
+  store.newUserTrend.length
+    ? buildNewUserTrendOption(store.newUserTrend)
+    : getEmptyChartOption()
+)
+const downloadPieOpt = computed(() =>
+  store.downloadChannelDist.length
+    ? buildDownloadPieOption(store.downloadChannelDist)
+    : getEmptyChartOption()
+)
+const downloadTrendOpt = computed(() =>
+  store.downloadTrend.length
+    ? buildDownloadTrendOption(store.downloadTrend)
     : getEmptyChartOption()
 )
 
