@@ -24,8 +24,7 @@
       <header class="topbar">
         <h2>{{ currentTitle }}</h2>
         <div class="actions">
-          <div class="date-range">📅 数据截至昨日（{{ updateDate }}）· 更新于 {{ lastRefreshed }}</div>
-          <button class="btn-refresh" @click="refreshData" :disabled="refreshing">{{ refreshing ? '🔄 刷新中...' : '🔄 刷新数据' }}</button>
+          <div class="date-range">📅 数据截至昨日（{{ updateDate }}）</div>
         </div>
       </header>
 
@@ -333,8 +332,6 @@ const titleMap: Record<string, string> = {
 }
 
 const currentTitle = computed(() => titleMap[activeSection.value] || '运营看板')
-const refreshing = ref(false)
-const lastRefreshed = ref('--')
 
 /** 看板数据为 T-1 口径，头部展示昨日日期 */
 const updateDate = computed(() => {
@@ -394,7 +391,6 @@ onMounted(async () => {
   nextTick(initFunnel)
   window.addEventListener('resize', handleResize)
   await store.loadBusinessMetrics()
-  lastRefreshed.value = new Date().toLocaleString('zh-CN', { hour12: false })
 })
 
 onBeforeUnmount(() => {
@@ -486,17 +482,6 @@ const activityConvOpt = computed(() =>
     ? buildActivityConvOption(store.activityConversion.stages)
     : getEmptyChartOption()
 )
-
-async function refreshData() {
-  refreshing.value = true
-  try {
-    await store.loadBusinessMetrics()
-    lastRefreshed.value = new Date().toLocaleString('zh-CN', { hour12: false })
-  } finally {
-    refreshing.value = false
-    window.dispatchEvent(new Event('resize'))
-  }
-}
 </script>
 
 <style lang="scss">
@@ -663,21 +648,6 @@ async function refreshData() {
     background: #f0f2f5;
     padding: 6px 14px;
     border-radius: 6px;
-  }
-
-  .btn-refresh {
-    background: #5b8def;
-    color: #fff;
-    border: none;
-    padding: 7px 16px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-    font-weight: 500;
-    transition: background 0.2s;
-
-    &:hover { background: #3b6fd6; }
-    &:disabled { opacity: 0.7; cursor: not-allowed; }
   }
 }
 
