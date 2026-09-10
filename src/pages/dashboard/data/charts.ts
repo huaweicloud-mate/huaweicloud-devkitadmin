@@ -135,8 +135,8 @@ export function buildDownloadTrendOption(data: Array<{ date: string; npmDownload
 // ======================== Section 2: 开放能力 ========================
 
 export function buildCapabilityTrendOption(data: Array<{ date: string; capability: string; callCount: number }>): EChartsOption {
-  const lineColors: Record<string, string> = { skill: '#5B8DEF', mcp: '#52C41A', total: '#722ED1' }
-  const lineNames: Record<string, string> = { skill: 'Skill调用', mcp: 'MCP调用', total: '开放能力调用' }
+  const lineColors: Record<string, string> = { skill: '#5B8DEF', mcp: '#52C41A', cli: '#FAAD14' }
+  const lineNames: Record<string, string> = { skill: 'Skill调用', mcp: 'MCP调用', cli: 'CLI调用' }
   const dates = [...new Set(data.map(item => item.date))].sort()
   const countOf = (cap: string, date: string) =>
     data.find(i => i.date === date && i.capability === cap)?.callCount || 0
@@ -144,7 +144,7 @@ export function buildCapabilityTrendOption(data: Array<{ date: string; capabilit
   const lines: Array<{ key: string; data: number[] }> = [
     { key: 'skill', data: dates.map(d => countOf('skill', d)) },
     { key: 'mcp', data: dates.map(d => countOf('mcp', d)) },
-    { key: 'total', data: dates.map(d => countOf('skill', d) + countOf('mcp', d) + countOf('cli', d)) },
+    { key: 'cli', data: dates.map(d => countOf('cli', d)) },
   ]
   return {
     tooltip: { trigger: 'axis' },
@@ -167,10 +167,11 @@ export function buildCapabilityTrendOption(data: Array<{ date: string; capabilit
   }
 }
 
-/** 开放能力分布饼图（仅展示 MCP / CLI 占比） */
+/** 开放能力分布饼图（展示 Skill / MCP / CLI 占比） */
 export function buildCapabilityPieOption(data: Array<{ capability: string; callCount: number; percentage: number }>): EChartsOption {
-  const capColors: Record<string, string> = { mcp: '#52C41A', cli: '#FAAD14' }
-  const items = data.filter(d => d.capability === 'mcp' || d.capability === 'cli')
+  const capColors: Record<string, string> = { skill: '#5B8DEF', mcp: '#52C41A', cli: '#FAAD14' }
+  const capNames: Record<string, string> = { skill: 'Skill', mcp: 'MCP', cli: 'CLI' }
+  const items = data.filter(d => d.capability === 'skill' || d.capability === 'mcp' || d.capability === 'cli')
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     legend: { bottom: 0, textStyle: { fontSize: 11 } },
@@ -182,7 +183,7 @@ export function buildCapabilityPieOption(data: Array<{ capability: string; callC
       label: { fontSize: 11 },
       data: items.map(item => ({
         value: item.callCount,
-        name: item.capability,
+        name: capNames[item.capability] || item.capability,
         itemStyle: { color: capColors[item.capability] || '#5B8DEF' },
       })),
     }],

@@ -119,10 +119,10 @@ export interface SandboxHourly {
 export interface VoucherSummary {
   totalCount: number
   totalAmount: number
-  todayCount: number
-  todayAmount: number
-  todayCountChainRatio: number
-  todayAmountChainRatio: number
+  yesterdayCount: number
+  yesterdayAmount: number
+  yesterdayCountChainRatio: number
+  yesterdayAmountChainRatio: number
   monthCount: number
   monthAmount: number
   monthCountChainRatio: number
