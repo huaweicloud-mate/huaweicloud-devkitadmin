@@ -165,7 +165,7 @@
           </div>
           <div class="chart-row two">
             <ChartCard title="沙箱用户数趋势（近30天）" desc="每日沙箱去重用户数与事件总次数趋势" :option="sandboxTrendOpt" />
-            <ChartCard title="沙箱拉起耗时分布" desc="拉起耗时区间分布（秒），监控性能瓶颈" :option="sandboxDurationOpt" />
+            <ChartCard title="沙箱拉起耗时分布（近30天）" desc="近30天拉起耗时区间分布（秒），监控性能瓶颈" :option="sandboxDurationOpt" />
           </div>
           <div class="chart-row one">
             <ChartCard title="每小时沙箱用户数（今日）" desc="今日各时段沙箱去重用户数分布，识别使用高峰" :option="sandboxHourlyOpt" :height="260" />
@@ -226,7 +226,7 @@
           </div>
           <div class="chart-row two">
             <ChartCard title="代金券领取趋势（近30天）" desc="每日领取人数与发放金额趋势" :option="voucherTrendOpt" />
-            <ChartCard title="代金券面额分布" desc="不同面额代金券的领取占比" :option="voucherPieOpt" />
+            <ChartCard title="代金券面额分布（本月）" desc="本月不同面额代金券的领取占比" :option="voucherPieOpt" />
           </div>
         </section>
 
