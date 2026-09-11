@@ -89,8 +89,8 @@ export function buildNewUserTrendOption(data: Array<{ month: string; newUserCoun
     ],
     series: [
       { name: '新增用户', type: 'bar', data: data.map(d => d.newUserCount), itemStyle: { color: '#5B8DEF', borderRadius: [4, 4, 0, 0] }, barWidth: '40%' },
-      { name: '环比增长%', type: 'line', yAxisIndex: 1, data: data.map(d => d.momRate), itemStyle: { color: '#52C41A' } },
-      { name: '同比增长%', type: 'line', yAxisIndex: 1, data: data.map(d => d.yoyRate), itemStyle: { color: '#FAAD14' } },
+      { name: '环比增长%', type: 'line', yAxisIndex: 1, data: data.map(d => d.momRate == null ? null : Math.round(d.momRate)), itemStyle: { color: '#52C41A' } },
+      { name: '同比增长%', type: 'line', yAxisIndex: 1, data: data.map(d => d.yoyRate == null ? null : Math.round(d.yoyRate)), itemStyle: { color: '#FAAD14' } },
     ],
   }
 }
@@ -100,7 +100,7 @@ export function buildDownloadPieOption(data: Array<{ channel: string; count: num
   return {
     tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
     series: [{
-      type: 'pie', radius: ['45%', '70%'], center: ['50%', '52%'],
+      type: 'pie', percentPrecision: 0, radius: ['45%', '70%'], center: ['50%', '52%'],
       itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
       label: { fontSize: 11, formatter: '{b}\n{d}%' },
       data: data.map((d, i) => ({
@@ -177,7 +177,7 @@ export function buildCapabilityPieOption(data: Array<{ capability: string; callC
     legend: { bottom: 0, textStyle: { fontSize: 11 } },
     series: [{
       type: 'pie',
-      radius: ['40%', '65%'],
+      percentPrecision: 0,      radius: ['40%', '65%'],
       center: ['50%', '45%'],
       itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
       label: { fontSize: 11 },
@@ -337,7 +337,7 @@ export function buildVoucherPieOption(
     tooltip: { trigger: 'item', formatter: '{b}: {c}人 ({d}%)' },
     legend: { bottom: 0, textStyle: { fontSize: 11 } },
     series: [{
-      type: 'pie', radius: ['40%', '65%'], center: ['50%', '45%'],
+      type: 'pie', percentPrecision: 0, radius: ['40%', '65%'], center: ['50%', '45%'],
       itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
       label: { fontSize: 11, formatter: '{b}\n{d}%' },
       data: items.map((item, index) => ({
@@ -360,7 +360,7 @@ export function buildActivityFunnelOption(
   return {
     tooltip: {
       trigger: 'item',
-      formatter: (p: any) => p.name + '<br/>人数: <b>' + p.value.toLocaleString() + '</b><br/>转化率: <b>' + p.data.rate + '%</b>',
+      formatter: (p: any) => p.name + '<br/>人数: <b>' + p.value.toLocaleString() + '</b><br/>转化率: <b>' + Math.round(p.data.rate) + '%</b>',
     },
     color: palette,
     series: [{
@@ -376,7 +376,7 @@ export function buildActivityFunnelOption(
       label: {
         show: true,
         position: 'right',
-        formatter: (p: any) => `{name|${p.name}}\n{val|${p.value.toLocaleString()} 人} {rate|${p.data.rate}%}`,
+        formatter: (p: any) => `{name|${p.name}}\n{val|${p.value.toLocaleString()} 人} {rate|${Math.round(p.data.rate)}%}`,
         rich: {
           name: { fontSize: 13, color: '#374151', fontWeight: 600, lineHeight: 22 },
           val: { fontSize: 14, color: '#111827', fontWeight: 700, lineHeight: 22 },
