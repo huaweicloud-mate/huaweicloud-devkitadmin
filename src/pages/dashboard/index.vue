@@ -109,7 +109,7 @@
             />
           </div>
           <div class="chart-row two">
-            <ChartCard title="Agent 接入数量（按种类分布）" desc="按Agent名称合并统计（不区分平台）" :option="agentDistOpt" :height="320" />
+            <ChartCard title="Agent 接入数量Top15（按种类分布）" desc="按Agent名称合并统计（不区分平台，屏蔽test开头，仅展示Top15）" :option="agentDistOpt" :height="320" />
             <ChartCard title="下载渠道占比" desc="GitHub vs npm 下载量占比分布" :option="downloadPieOpt" :height="320" />
           </div>
           <div class="chart-row one">
@@ -404,11 +404,14 @@ const dauTrendOpt = computed(() =>
     ? buildDauTrendOption(store.dauTrend)
     : getEmptyChartOption()
 )
-const agentDistOpt = computed(() =>
-  store.agentDistribution.length
-    ? buildAgentDistributionOption(store.agentDistribution)
+const agentDistOpt = computed(() => {
+  const agents = store.agentDistribution
+    .filter(a => !a.name.toLowerCase().startsWith('test'))
+    .slice(0, 15)
+  return agents.length
+    ? buildAgentDistributionOption(agents)
     : getEmptyChartOption()
-)
+})
 const newUserTrendOpt = computed(() =>
   store.newUserTrend.length
     ? buildNewUserTrendOption(store.newUserTrend)
