@@ -46,7 +46,7 @@
                 <div class="kpi-badge">
                   <div class="badge-label">新增环比</div>
                   <div class="badge-num">{{ fmt(store.developerSummary?.newUsersThisMonth) }}</div>
-                  <div class="badge-trend up">↑ {{ store.developerSummary?.newUsersGrowthRate ?? '--' }}%</div>
+                  <div class="badge-trend up">↑ {{ store.developerSummary?.newUsersGrowthRate != null ? Math.round(store.developerSummary.newUsersGrowthRate) : '--' }}%</div>
                 </div>
               </template>
             </KpiCard>
@@ -147,7 +147,7 @@
             <KpiCard
               label="昨日沙箱用户数"
               :value="fmt(store.sandboxSummary?.dailyUsers)"
-              :trend="`↑ ${store.sandboxSummary?.dailyUsersChainRatio?.toFixed(1) ?? '--'}% 较前日`"
+              :trend="`↑ ${store.sandboxSummary?.dailyUsersChainRatio != null ? Math.round(store.sandboxSummary.dailyUsersChainRatio) : '--'}% 较前日`"
               trend-dir="up"
               accent="green"
               icon="📅"
@@ -193,7 +193,7 @@
             <KpiCard
               label="昨日领取人数"
               :value="fmt(store.voucherSummary?.yesterdayCount)"
-              :trend="`↑ ${store.voucherSummary?.yesterdayCountChainRatio?.toFixed(1) ?? '--'}% 较前日`"
+              :trend="`↑ ${store.voucherSummary?.yesterdayCountChainRatio != null ? Math.round(store.voucherSummary.yesterdayCountChainRatio) : '--'}% 较前日`"
               trend-dir="up"
               accent="orange"
               icon="📅"
@@ -201,7 +201,7 @@
             <KpiCard
               label="昨日发放金额"
               :value="fmtYuanWithSymbol(store.voucherSummary?.yesterdayAmount)"
-              :trend="`↑ ${store.voucherSummary?.yesterdayAmountChainRatio?.toFixed(1) ?? '--'}% 较前日`"
+              :trend="`↑ ${store.voucherSummary?.yesterdayAmountChainRatio != null ? Math.round(store.voucherSummary.yesterdayAmountChainRatio) : '--'}% 较前日`"
               trend-dir="up"
               accent="cyan"
               icon="💵"
@@ -209,7 +209,7 @@
             <KpiCard
               label="本月领取人数"
               :value="fmt(store.voucherSummary?.monthCount)"
-              :trend="`↑ ${store.voucherSummary?.monthCountChainRatio?.toFixed(1) ?? '--'}% 环比`"
+              :trend="`↑ ${store.voucherSummary?.monthCountChainRatio != null ? Math.round(store.voucherSummary.monthCountChainRatio) : '--'}% 环比`"
               trend-dir="up"
               accent="purple"
               icon="🌙"
@@ -217,7 +217,7 @@
             <KpiCard
               label="本月发放金额"
               :value="fmtYuanWithSymbol(store.voucherSummary?.monthAmount)"
-              :trend="`↑ ${store.voucherSummary?.monthAmountChainRatio?.toFixed(1) ?? '--'}% 环比`"
+              :trend="`↑ ${store.voucherSummary?.monthAmountChainRatio != null ? Math.round(store.voucherSummary.monthAmountChainRatio) : '--'}% 环比`"
               trend-dir="up"
               accent="red"
               icon="💴"
@@ -243,7 +243,7 @@
             <KpiCard
               label="初章完成人数"
               :value="fmt(store.activitySummary?.chapter1Completed)"
-              :trend="`完成率 ${store.activitySummary?.chapter1Rate?.toFixed(1) ?? '--'}%`"
+              :trend="`完成率 ${store.activitySummary?.chapter1Rate != null ? Math.round(store.activitySummary.chapter1Rate) : '--'}%`"
               trend-dir="flat"
               accent="green"
               icon="📖"
@@ -251,7 +251,7 @@
             <KpiCard
               label="进阶章完成人数"
               :value="fmt(store.activitySummary?.chapter2Completed)"
-              :trend="`完成率 ${store.activitySummary?.chapter2Rate?.toFixed(1) ?? '--'}%`"
+              :trend="`完成率 ${store.activitySummary?.chapter2Rate != null ? Math.round(store.activitySummary.chapter2Rate) : '--'}%`"
               trend-dir="flat"
               accent="orange"
               icon="📚"
@@ -259,7 +259,7 @@
             <KpiCard
               label="终章完成人数"
               :value="fmt(store.activitySummary?.chapter3Completed)"
-              :trend="`完成率 ${store.activitySummary?.chapter3Rate?.toFixed(1) ?? '--'}%`"
+              :trend="`完成率 ${store.activitySummary?.chapter3Rate != null ? Math.round(store.activitySummary.chapter3Rate) : '--'}%`"
               trend-dir="flat"
               accent="purple"
               icon="🏆"
@@ -354,16 +354,16 @@ const activityFunnelOpt = computed(() =>
 const funnelAlertText = computed(() => {
   const s = store.activitySummary
   if (!s || s.totalParticipants === 0) return '暂无活动数据'
-  const c1Drop = (100 - s.chapter1Rate).toFixed(1)
-  const c2Drop = s.chapter1Rate > 0 ? (100 - (s.chapter2Rate / s.chapter1Rate * 100)).toFixed(1) : '--'
-  const c3Drop = s.chapter2Rate > 0 ? (100 - (s.chapter3Rate / s.chapter2Rate * 100)).toFixed(1) : '--'
+  const c1Drop = Math.round(100 - s.chapter1Rate)
+  const c2Drop = s.chapter1Rate > 0 ? Math.round(100 - (s.chapter2Rate / s.chapter1Rate * 100)) : '--'
+  const c3Drop = s.chapter2Rate > 0 ? Math.round(100 - (s.chapter3Rate / s.chapter2Rate * 100)) : '--'
   const drops = [
     { stage: '参与→初章', rate: c1Drop },
     { stage: '初章→进阶章', rate: c2Drop },
     { stage: '进阶章→终章', rate: c3Drop },
   ]
-  const maxDrop = drops.reduce((a, b) => parseFloat(a.rate) > parseFloat(b.rate) ? a : b)
-  return `${maxDrop.stage}流失率最高（${maxDrop.rate}%），建议优化该环节任务难度或增加引导。终章完成率${s.chapter3Rate.toFixed(1)}%仍有提升空间。`
+  const maxDrop = drops.reduce((a, b) => Number(a.rate) > Number(b.rate) ? a : b)
+  return `${maxDrop.stage}流失率最高（${maxDrop.rate}%），建议优化该环节任务难度或增加引导。终章完成率${s.chapter3Rate != null ? Math.round(s.chapter3Rate) : '--'}%仍有提升空间。`
 })
 
 function initFunnel() {
