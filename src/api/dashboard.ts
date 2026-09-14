@@ -114,3 +114,15 @@ export function getActivityTrend() {
 export function getActivityConversion() {
   return http.get(`${BASE}/activity/conversion`)
 }
+
+// ======================== 插件开源运营 ========================
+
+/** 开源运营 KPI + Star 趋势 */
+export function getOpenSourceSummary() {
+  return http.get(`${BASE}/opensource/summary`)
+}
+
+/** 版本发布历史 */
+export function getOpenSourceReleases() {
+  return http.get(`${BASE}/opensource/releases`)
+}

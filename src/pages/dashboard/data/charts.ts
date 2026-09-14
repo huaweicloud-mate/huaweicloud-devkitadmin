@@ -449,3 +449,35 @@ export function buildActivityConvOption(
     }] as any[],
   }
 }
+
+/** 插件开源运营：Star 数与下载量组合趋势（双轴） */
+export function buildStarDownloadTrendOption(
+  data: Array<{ date: string; stars: number; downloads: number }>,
+): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 60, right: 60, top: 30, bottom: 55 },
+    xAxis: { type: 'category', data: data.map(d => d.date), ...axisStyle },
+    yAxis: [
+      { type: 'value', name: 'Star 数', ...axisStyle },
+      { type: 'value', name: '下载量', ...axisStyle },
+    ],
+    series: [
+      {
+        name: 'GitHub Star 数',
+        type: 'line',
+        data: data.map(d => d.stars),
+        itemStyle: { color: '#FAAD14' },
+        smooth: true,
+      },
+      {
+        name: '下载量',
+        type: 'bar',
+        yAxisIndex: 1,
+        data: data.map(d => d.downloads),
+        itemStyle: { color: '#5B8DEF' },
+      },
+    ] as any[],
+  }
+}

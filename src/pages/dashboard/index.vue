@@ -133,6 +133,55 @@
           </div>
         </section>
 
+        <!-- ======== Section 3: 插件开源运营 ======== -->
+        <section v-if="activeSection === 's3'" class="section">
+          <div class="kpi-grid">
+            <KpiCard
+              label="Star 数"
+              :value="fmt(store.openSourceSummary?.stars)"
+              :trend="`↑ ${weekStarDelta} 本周`"
+              trend-dir="up"
+              accent="blue"
+              icon="⭐"
+            />
+            <KpiCard
+              label="Fork 数"
+              :value="fmt(store.openSourceSummary?.forks)"
+              trend="累计总量"
+              trend-dir="up"
+              accent="green"
+              icon="🍴"
+            />
+            <KpiCard
+              label="已发布版本数"
+              :value="fmt(store.openSourceSummary?.releases)"
+              :trend="store.openSourceSummary?.latestVersion ? `最新: ${store.openSourceSummary.latestVersion}` : '--'"
+              trend-dir="flat"
+              accent="orange"
+              icon="🚀"
+            />
+          </div>
+          <div class="chart-row two">
+            <ChartCard title="Star 数 & 下载量趋势" desc="GitHub Star 数与仓库下载量（数据截至昨日）" :option="starDownloadTrendOpt" :height="320" />
+            <div class="chart-card">
+              <div class="chart-title">版本发布历史</div>
+              <div class="chart-desc">GitHub Releases 发布记录与资产下载量</div>
+              <div class="release-list">
+                <div v-if="!store.openSourceReleases?.length" class="release-empty">暂无版本发布数据</div>
+                <div v-for="r in store.openSourceReleases" :key="r.tagName" class="release-item">
+                  <div class="release-tag">{{ r.tagName }}</div>
+                  <div class="release-name">{{ r.name || r.tagName }}</div>
+                  <div class="release-date">{{ r.publishedDate }}</div>
+                  <div class="release-dl">{{ fmt(r.downloadCount) }} 次下载</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="chart-row one">
+            <ChartCard title="贡献者活跃（近 3 个月）" desc="Commit / PR / Issue 贡献者活跃趋势（数据采集中，即将上线）" :option="getEmptyChartOption()" :height="260" />
+          </div>
+        </section>
+
         <!-- ======== Section 4: 沙箱资源信息 ======== -->
         <section v-if="activeSection === 's4'" class="section">
           <div class="kpi-grid">
@@ -302,6 +351,7 @@ import {
   buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
   buildVoucherTrendOption, buildVoucherPieOption,
   buildActivityFunnelOption, buildActivityTrendOption, buildActivityConvOption,
+  buildStarDownloadTrendOption,
 } from './data/charts'
 
 const store = useDashboardStore()
@@ -319,15 +369,16 @@ watch(activeSection, () => {
 })
 
 const navItems = [
-  { key: 's1', icon: '📈', label: '业务核心指标', badge: '' },
-  { key: 's2', icon: '🔌', label: '开放能力', badge: '' },
-  { key: 's4', icon: '🖥️', label: '沙箱资源信息', badge: '' },
-  { key: 's5', icon: '🎫', label: '代金券资源', badge: '' },
-  { key: 's6', icon: '🎯', label: '活动统计', badge: '' },
+  { key: 's1', icon: '??', label: '业务核心指标', badge: '' },
+  { key: 's2', icon: '??', label: '开放能力', badge: '' },
+  { key: 's3', icon: '⭐', label: '插件开源运营', badge: '' },
+  { key: 's4', icon: '???', label: '沙箱资源信息', badge: '' },
+  { key: 's5', icon: '??', label: '代金券资源', badge: '' },
+  { key: 's6', icon: '??', label: '活动统计', badge: '' },
 ]
 
 const titleMap: Record<string, string> = {
-  s1: '业务核心指标', s2: '开放能力',
+  s1: '业务核心指标', s2: '开放能力', s3: '插件开源运营',
   s4: '沙箱资源信息', s5: '代金券资源信息', s6: '活动统计信息',
 }
 
@@ -343,6 +394,28 @@ const updateDate = computed(() => {
 // Funnel chart (special case — manual echarts.init, not ChartCard :option)
 const funnelRef = ref<HTMLDivElement>()
 let funnelChart: echarts.ECharts | null = null
+
+// ==================== 板块三：插件开源运营 ====================
+
+const weekStarDelta = computed(() => {
+  const trend = store.openSourceSummary?.starTrend
+  if (!trend || trend.length < 8) return 0
+  const latest = trend[trend.length - 1].stars
+  const weekAgo = trend[trend.length - 8].stars
+  return latest - weekAgo
+})
+
+const starDownloadTrendOpt = computed(() =>
+  store.openSourceSummary?.starTrend?.length
+    ? buildStarDownloadTrendOption(
+        store.openSourceSummary.starTrend.map((t, i) => ({
+          date: t.date,
+          stars: t.stars,
+          downloads: store.openSourceSummary?.downloadTrend?.[i]?.downloads ?? 0,
+        })),
+      )
+    : getEmptyChartOption()
+)
 
 // Activity computed options
 const activityFunnelOpt = computed(() =>
@@ -502,6 +575,47 @@ const activityConvOpt = computed(() =>
 }
 
 // KPI badge (inside KpiCard slot)
+.release-list {
+  max-height: 280px;
+  overflow-y: auto;
+  padding: 4px 8px;
+}
+
+.release-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 4px;
+  border-bottom: 1px solid #F3F4F6;
+  font-size: 12px;
+}
+
+.release-item:last-child { border-bottom: none; }
+
+.release-tag {
+  font-weight: 600;
+  color: #1F2937;
+  min-width: 90px;
+}
+
+.release-name {
+  flex: 1;
+  color: #6B7280;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.release-date { color: #9CA3AF; }
+
+.release-dl { color: #5B8DEF; font-weight: 500; }
+
+.release-empty {
+  text-align: center;
+  color: #9CA3AF;
+  padding: 24px 0;
+  font-size: 12px;
+}
 .kpi-badge {
   text-align: right;
   padding-left: 16px;
