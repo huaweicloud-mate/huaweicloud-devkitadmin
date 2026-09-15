@@ -384,6 +384,22 @@ export function buildActivityFunnelOption(
         },
       },
       labelLine: { length: 20, lineStyle: { width: 1, type: 'solid', color: '#E5E7EB' } },
+      labelLayout: (p: any) => {
+        const pts = p.labelLinePoints
+        if (!pts || pts.length < 2) return {}
+        if (p.dataIndex !== 0 && p.dataIndex !== funnel.length - 1) return {}
+        const anchor = pts[0]
+        const run = 50
+        const drop = +(run * Math.tan(15 * Math.PI / 180)).toFixed(1)
+        const elbow = [anchor[0] + run, anchor[1] + drop]
+        return {
+          x: elbow[0] + 6,
+          y: elbow[1],
+          align: 'left',
+          verticalAlign: 'middle',
+          labelLinePoints: [[anchor[0], anchor[1]], elbow],
+        }
+      },
       itemStyle: { borderColor: '#fff', borderWidth: 2, borderRadius: 6 },
       emphasis: {
         label: { fontSize: 14 },
