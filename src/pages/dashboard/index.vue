@@ -369,12 +369,12 @@ watch(activeSection, () => {
 })
 
 const navItems = [
-  { key: 's1', icon: '??', label: '业务核心指标', badge: '' },
-  { key: 's2', icon: '??', label: '开放能力', badge: '' },
+  { key: 's1', icon: '👥', label: '业务核心指标', badge: '' },
+  { key: 's2', icon: '🛠️', label: '开放能力', badge: '' },
   { key: 's3', icon: '⭐', label: '插件开源运营', badge: '' },
-  { key: 's4', icon: '???', label: '沙箱资源信息', badge: '' },
-  { key: 's5', icon: '??', label: '代金券资源', badge: '' },
-  { key: 's6', icon: '??', label: '活动统计', badge: '' },
+  { key: 's4', icon: '📦', label: '沙箱资源信息', badge: '' },
+  { key: 's5', icon: '💰', label: '代金券资源', badge: '' },
+  { key: 's6', icon: '🎯', label: '活动统计', badge: '' },
 ]
 
 const titleMap: Record<string, string> = {
