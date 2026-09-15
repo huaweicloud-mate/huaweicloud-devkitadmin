@@ -75,6 +75,43 @@ export interface SkillRankingItem {
   percentage: number
 }
 
+export interface OpenSourceSummary {
+  stars: number
+  forks: number
+  watchers: number
+  openIssues: number
+  commits: number
+  releases: number
+  openPrs: number
+  latestVersion: string | null
+  latestReleaseDate: string | null
+  starTrend: OpenSourceTrendItem[]
+  downloadTrend: OpenSourceDownloadTrendItem[]
+}
+
+export interface OpenSourceTrendItem {
+  date: string
+  stars: number
+}
+
+export interface OpenSourceDownloadTrendItem {
+  date: string
+  downloads: number
+}
+
+export interface OpenSourceContributorItem {
+  author: string
+  commits: number
+  prs: number
+  issues: number
+}
+export interface OpenSourceReleaseItem {
+  tagName: string
+  name: string
+  publishedDate: string
+  downloadCount: number
+}
+
 export interface SandboxSummary {
   totalUsers: number
   dailyUsers: number
@@ -221,6 +258,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const activityTrend = ref<ActivityTrend | null>(null)
   const activityConversion = ref<ActivityConversion | null>(null)
 
+  const openSourceSummary = ref<OpenSourceSummary | null>(null)
+  const openSourceReleases = ref<OpenSourceReleaseItem[]>([])
+  const openSourceContributors = ref<OpenSourceContributorItem[]>([])
+  const openSourceError = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
 
@@ -358,6 +399,21 @@ export const useDashboardStore = defineStore('dashboard', () => {
     activityConversion.value = raw
   }
 
+  async function loadOpenSource() {
+    try {
+      const [summary, releases, contributors] = await Promise.all([
+        api.getOpenSourceSummary(),
+        api.getOpenSourceReleases(),
+        api.getOpenSourceContributors(),
+      ])
+      openSourceSummary.value = summary.data
+      openSourceReleases.value = releases.data.releases ?? []
+      openSourceContributors.value = contributors.data.contributors ?? []
+    } catch (e: any) {
+      openSourceError.value = e.message || 'Failed to load opensource metrics'
+    }
+  }
+
   async function loadBusinessMetrics() {
     loading.value = true
     error.value = null
@@ -384,6 +440,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
         loadActivitySummary(),
         loadActivityTrend(),
         loadActivityConversion(),
+        loadOpenSource(),
       ])
     } catch (e: any) {
       error.value = e.message || 'Failed to load metrics'
@@ -414,6 +471,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     activitySummary,
     activityTrend,
     activityConversion,
+    openSourceSummary,
+    openSourceReleases,
+    openSourceContributors,
+    openSourceError,
     loading,
     error,
     loadDeveloperSummary,
@@ -437,6 +498,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loadActivitySummary,
     loadActivityTrend,
     loadActivityConversion,
+    loadOpenSource,
     loadBusinessMetrics,
   }
 })
