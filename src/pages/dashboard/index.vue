@@ -178,7 +178,7 @@
             </div>
           </div>
           <div class="chart-row one">
-            <ChartCard title="贡献者活跃（近 3 个月）" desc="Commit / PR / Issue 贡献者活跃趋势（数据采集中，即将上线）" :option="getEmptyChartOption()" :height="260" />
+            <ChartCard title="贡献者活跃（近 3 个月）" desc="贡献者 Commit / PR / Issue 数量统计" :option="contributorActivityOpt" :height="260" />
           </div>
         </section>
 
@@ -351,7 +351,7 @@ import {
   buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
   buildVoucherTrendOption, buildVoucherPieOption,
   buildActivityFunnelOption, buildActivityTrendOption, buildActivityConvOption,
-  buildStarDownloadTrendOption,
+  buildStarDownloadTrendOption, buildContributorActivityOption,
 } from './data/charts'
 
 const store = useDashboardStore()
@@ -414,6 +414,12 @@ const starDownloadTrendOpt = computed(() =>
           downloads: store.openSourceSummary?.downloadTrend?.[i]?.downloads ?? 0,
         })),
       )
+    : getEmptyChartOption()
+)
+
+const contributorActivityOpt = computed(() =>
+  store.openSourceContributors?.length
+    ? buildContributorActivityOption(store.openSourceContributors)
     : getEmptyChartOption()
 )
 

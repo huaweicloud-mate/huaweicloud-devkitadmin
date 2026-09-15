@@ -481,3 +481,21 @@ export function buildStarDownloadTrendOption(
     ] as any[],
   }
 }
+/** 插件开源运营：贡献者活跃（分组柱状图） */
+export function buildContributorActivityOption(
+  data: Array<{ author: string; commits: number; prs: number; issues: number }>,
+): EChartsOption {
+  const authors = data.map(d => d.author)
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { bottom: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 50, right: 20, top: 30, bottom: 55 },
+    xAxis: { type: 'category', data: authors, ...axisStyle },
+    yAxis: { type: 'value', name: '数量', ...axisStyle },
+    series: [
+      { name: 'Commit', type: 'bar', data: data.map(d => d.commits), itemStyle: { color: '#5B8DEF' } },
+      { name: 'PR', type: 'bar', data: data.map(d => d.prs), itemStyle: { color: '#52C41A' } },
+      { name: 'Issue', type: 'bar', data: data.map(d => d.issues), itemStyle: { color: '#FAAD14' } },
+    ],
+  }
+}

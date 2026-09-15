@@ -126,3 +126,7 @@ export function getOpenSourceSummary() {
 export function getOpenSourceReleases() {
   return http.get(`${BASE}/opensource/releases`)
 }
+/** 贡献者活跃（近 3 个月） */
+export function getOpenSourceContributors() {
+  return http.get(`${BASE}/opensource/contributors`)
+}

@@ -99,6 +99,12 @@ export interface OpenSourceDownloadTrendItem {
   downloads: number
 }
 
+export interface OpenSourceContributorItem {
+  author: string
+  commits: number
+  prs: number
+  issues: number
+}
 export interface OpenSourceReleaseItem {
   tagName: string
   name: string
@@ -254,6 +260,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   const openSourceSummary = ref<OpenSourceSummary | null>(null)
   const openSourceReleases = ref<OpenSourceReleaseItem[]>([])
+  const openSourceContributors = ref<OpenSourceContributorItem[]>([])
   const openSourceError = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -394,12 +401,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function loadOpenSource() {
     try {
-      const [summary, releases] = await Promise.all([
+      const [summary, releases, contributors] = await Promise.all([
         api.getOpenSourceSummary(),
         api.getOpenSourceReleases(),
+        api.getOpenSourceContributors(),
       ])
       openSourceSummary.value = summary.data
       openSourceReleases.value = releases.data.releases ?? []
+      openSourceContributors.value = contributors.data.contributors ?? []
     } catch (e: any) {
       openSourceError.value = e.message || 'Failed to load opensource metrics'
     }
@@ -464,6 +473,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     activityConversion,
     openSourceSummary,
     openSourceReleases,
+    openSourceContributors,
     openSourceError,
     loading,
     error,
