@@ -405,10 +405,15 @@ export const useDashboardStore = defineStore('dashboard', () => {
         api.getOpenSourceSummary(),
         api.getOpenSourceReleases(),
         api.getOpenSourceContributors(),
-      ])
-      openSourceSummary.value = summary.data
-      openSourceReleases.value = releases.data.releases ?? []
-      openSourceContributors.value = contributors.data.contributors ?? []
+      ]) as any[]
+      // axios 拦截器已解包 response.data；后端趋势点字段为 value，归一化为模板使用的 stars/downloads
+      openSourceSummary.value = {
+        ...summary,
+        starTrend: (summary.starTrend ?? []).map((p: any) => ({ date: p.date, stars: p.value })),
+        downloadTrend: (summary.downloadTrend ?? []).map((p: any) => ({ date: p.date, downloads: p.value })),
+      }
+      openSourceReleases.value = releases.releases ?? []
+      openSourceContributors.value = contributors.contributors ?? []
     } catch (e: any) {
       openSourceError.value = e.message || 'Failed to load opensource metrics'
     }
