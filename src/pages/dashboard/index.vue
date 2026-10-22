@@ -24,7 +24,25 @@
       <header class="topbar">
         <h2>{{ currentTitle }}</h2>
         <div class="actions">
-          <div class="date-range">📅 数据截至昨日（{{ updateDate }}）</div>
+          <div v-if="store.realtimeError" class="realtime-error">⚠ {{ store.realtimeError }}</div>
+          <div class="range-switch" role="group" aria-label="数据口径切换">
+            <button
+              type="button"
+              :class="{ active: !isRealtime }"
+              :disabled="store.loading"
+              @click="store.setDateRange('yesterday')"
+            >前一天</button>
+            <button
+              type="button"
+              :class="{ active: isRealtime }"
+              :disabled="store.loading"
+              @click="store.setDateRange('realtime')"
+            >当天实时</button>
+          </div>
+          <div class="date-range">
+            <template v-if="isRealtime">⚡ 当天实时{{ store.computedAt ? `（计算于 ${store.computedAt}）` : '' }}</template>
+            <template v-else>📅 数据截至昨日（{{ updateDate }}）</template>
+          </div>
         </div>
       </header>
 
@@ -61,7 +79,7 @@
             <KpiCard
               label="日活跃数（DAU）"
               :value="fmt(store.developerSummary?.dau)"
-              trend="昨日活跃"
+              :trend="`${dayWord}活跃`"
               trend-dir="up"
               accent="cyan"
               icon="☀️"
@@ -194,7 +212,7 @@
               icon="📦"
             />
             <KpiCard
-              label="昨日沙箱用户数"
+              :label="`${dayWord}沙箱用户数`"
               :value="fmt(store.sandboxSummary?.dailyUsers)"
               :trend="`↑ ${store.sandboxSummary?.dailyUsersChainRatio != null ? Math.round(store.sandboxSummary.dailyUsersChainRatio) : '--'}% 较前日`"
               trend-dir="up"
@@ -216,7 +234,7 @@
             <ChartCard title="沙箱拉起耗时分布（近30天）" desc="近30天拉起耗时区间分布（秒），监控性能瓶颈" :option="sandboxDurationOpt" />
           </div>
           <div class="chart-row one">
-            <ChartCard title="每小时沙箱用户数（昨日）" desc="昨日各时段沙箱去重用户数分布，识别使用高峰" :option="sandboxHourlyOpt" :height="260" />
+            <ChartCard :title="`每小时沙箱用户数（${dayWord}）`" :desc="`${dayWord}各时段沙箱去重用户数分布，识别使用高峰`" :option="sandboxHourlyOpt" :height="260" />
           </div>
         </section>
 
@@ -240,7 +258,7 @@
               icon="💰"
             />
             <KpiCard
-              label="昨日领取人数"
+              :label="`${dayWord}领取人数`"
               :value="fmt(store.voucherSummary?.yesterdayCount)"
               :trend="`↑ ${store.voucherSummary?.yesterdayCountChainRatio != null ? Math.round(store.voucherSummary.yesterdayCountChainRatio) : '--'}% 较前日`"
               trend-dir="up"
@@ -248,7 +266,7 @@
               icon="📅"
             />
             <KpiCard
-              label="昨日发放金额"
+              :label="`${dayWord}发放金额`"
               :value="fmtYuanWithSymbol(store.voucherSummary?.yesterdayAmount)"
               :trend="`↑ ${store.voucherSummary?.yesterdayAmountChainRatio != null ? Math.round(store.voucherSummary.yesterdayAmountChainRatio) : '--'}% 较前日`"
               trend-dir="up"
@@ -384,7 +402,12 @@ const titleMap: Record<string, string> = {
 
 const currentTitle = computed(() => titleMap[activeSection.value] || '运营看板')
 
-/** 看板数据为 T-1 口径，头部展示昨日日期 */
+/** 数据口径：前一天（T-1，默认）/ 当天实时 */
+const isRealtime = computed(() => store.dateRange === 'realtime')
+/** 随口径切换的“日”措辞：昨日 / 当天 */
+const dayWord = computed(() => (isRealtime.value ? '当天' : '昨日'))
+
+/** 看板数据为 T-1 口径时，头部展示昨日日期 */
 const updateDate = computed(() => {
   const d = new Date()
   d.setDate(d.getDate() - 1)
@@ -764,6 +787,37 @@ const activityConvOpt = computed(() =>
   h2 { font-size: 18px; font-weight: 700; }
 
   .actions { display: flex; gap: 12px; align-items: center; }
+
+  .range-switch {
+    display: inline-flex;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    overflow: hidden;
+    background: #fff;
+
+    button {
+      border: none;
+      background: #fff;
+      color: #6b7280;
+      font-size: 12px;
+      padding: 6px 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover:not(:disabled) { color: #1f2937; background: #f9fafb; }
+      &.active { background: #5b8def; color: #fff; font-weight: 600; }
+      &:disabled { opacity: 0.6; cursor: not-allowed; }
+    }
+  }
+
+  .realtime-error {
+    font-size: 12px;
+    color: #d97706;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
+    padding: 6px 12px;
+    border-radius: 6px;
+  }
 
   .date-range {
     font-size: 12px;
