@@ -177,7 +177,8 @@ export function buildCapabilityPieOption(data: Array<{ capability: string; callC
     legend: { bottom: 0, textStyle: { fontSize: 11 } },
     series: [{
       type: 'pie',
-      percentPrecision: 0,      radius: ['40%', '65%'],
+      percentPrecision: 0,
+      radius: ['40%', '65%'],
       center: ['50%', '45%'],
       itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
       label: { fontSize: 11 },
@@ -477,7 +478,7 @@ export function buildStarDownloadTrendOption(
     xAxis: { type: 'category', data: data.map(d => d.date), ...axisStyle },
     yAxis: [
       { type: 'value', name: 'Star 数', ...axisStyle },
-      { type: 'value', name: '下载量', ...axisStyle },
+      { type: 'value', name: 'npm 下载量', ...axisStyle },
     ],
     series: [
       {
@@ -488,7 +489,7 @@ export function buildStarDownloadTrendOption(
         smooth: true,
       },
       {
-        name: '下载量',
+        name: 'npm 下载量',
         type: 'bar',
         yAxisIndex: 1,
         data: data.map(d => d.downloads),
