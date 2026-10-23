@@ -180,17 +180,17 @@
             />
           </div>
           <div class="chart-row two">
-            <ChartCard title="Star 数 & 下载量趋势" desc="GitHub Star 数与仓库下载量（数据截至昨日）" :option="starDownloadTrendOpt" :height="320" />
+            <ChartCard title="Star 数 & 下载量趋势" desc="GitHub Star 数与 npm 日下载量（数据截至昨日）" :option="starDownloadTrendOpt" :height="320" />
             <div class="chart-card">
-              <div class="chart-title">版本发布历史</div>
-              <div class="chart-desc">GitHub Releases 发布记录与资产下载量</div>
+              <div class="chart-title">版本发布历史 <span style="font-size:11px;color:#9CA3AF;font-weight:400">npm 口径</span></div>
+              <div class="chart-desc">npm 口径 · 发布期间累计（近似）</div>
               <div class="release-list">
                 <div v-if="!store.openSourceReleases?.length" class="release-empty">暂无版本发布数据</div>
                 <div v-for="r in store.openSourceReleases" :key="r.tagName" class="release-item">
                   <div class="release-tag">{{ r.tagName }}</div>
                   <div class="release-name">{{ r.name || r.tagName }}</div>
                   <div class="release-date">{{ r.publishedDate }}</div>
-                  <div class="release-dl">{{ fmt(r.downloadCount) }} 次下载</div>
+                  <div class="release-dl">{{ r.downloadCount != null ? fmt(r.downloadCount) + " 次下载" : "--" }}</div>
                 </div>
               </div>
             </div>

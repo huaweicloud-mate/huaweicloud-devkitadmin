@@ -98,6 +98,7 @@ export interface OpenSourceTrendItem {
 export interface OpenSourceDownloadTrendItem {
   date: string
   downloads: number
+  source?: string
 }
 
 export interface OpenSourceContributorItem {
@@ -110,7 +111,8 @@ export interface OpenSourceReleaseItem {
   tagName: string
   name: string
   publishedDate: string
-  downloadCount: number
+  downloadCount: number | null
+  downloadSource?: string
 }
 
 export interface SandboxSummary {
@@ -439,9 +441,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
       openSourceSummary.value = {
         ...summary,
         starTrend: (summary.starTrend ?? []).map((p: any) => ({ date: p.date, stars: p.value })),
-        downloadTrend: (summary.downloadTrend ?? []).map((p: any) => ({ date: p.date, downloads: p.value })),
+        downloadTrend: (summary.downloadTrend ?? []).map((p: any) => ({
+          date: p.date,
+          downloads: p.value,
+          source: summary.downloadTrendSource ?? 'npm',
+        })),
       }
-      openSourceReleases.value = releases.releases ?? []
+      openSourceReleases.value = (releases.releases ?? []).map((r: any) => ({
+        ...r,
+        downloadSource: r.downloadSource ?? 'npm',
+      }))
       openSourceContributors.value = contributors.contributors ?? []
     } catch (e: any) {
       openSourceError.value = e.message || 'Failed to load opensource metrics'
@@ -545,3 +554,4 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loadBusinessMetrics,
   }
 })
+
