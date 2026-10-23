@@ -498,6 +498,7 @@ onMounted(async () => {
   nextTick(initFunnel)
   window.addEventListener('resize', handleResize)
   await store.loadBusinessMetrics()
+  if (store.dateRange === 'realtime') await store.startAutoRefresh()
 })
 
 onBeforeUnmount(() => {
