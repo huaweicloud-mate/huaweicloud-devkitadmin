@@ -40,7 +40,7 @@
             >当天实时</button>
           </div>
           <div class="date-range">
-            <template v-if="isRealtime">⚡ 当天实时{{ store.computedAt ? `（计算于 ${store.computedAt}）` : '' }}</template>
+            <template v-if="isRealtime">⚡ 当天实时{{ store.computedAt ? `（计算于 ${store.computedAt}）` : '' }} · 每 {{ store.refreshIntervalMinutes }} 分钟自动刷新</template>
             <template v-else>📅 数据截至昨日（{{ updateDate }}）</template>
           </div>
         </div>
@@ -355,7 +355,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, nextTick, watch, onMounted, onBeforeUnmount, onUnmounted } from 'vue'
 import * as echarts from 'echarts'
 import KpiCard from './components/KpiCard.vue'
 import ChartCard from './components/ChartCard.vue'
@@ -373,6 +373,11 @@ import {
 } from './data/charts'
 
 const store = useDashboardStore()
+
+/** 组件卸载时停止实时自动刷新定时器，避免泄漏 */
+onUnmounted(() => {
+  store.stopAutoRefresh()
+})
 
 /** 格式化数字（千分位） */
 function fmt(val: number | undefined | null): string {
@@ -493,6 +498,7 @@ onMounted(async () => {
   nextTick(initFunnel)
   window.addEventListener('resize', handleResize)
   await store.loadBusinessMetrics()
+  if (store.dateRange === 'realtime') await store.startAutoRefresh()
 })
 
 onBeforeUnmount(() => {

@@ -274,6 +274,39 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const computedAt = ref<string | null>(null)
   const realtimeError = ref<string | null>(null)
 
+  /** 实时自动刷新间隔（分钟），取自后台动态配置，失败兜底 5 */
+  const refreshIntervalMinutes = ref(5)
+  let autoRefreshTimer: ReturnType<typeof setInterval> | null = null
+  /** 代次计数器：stopAutoRefresh 时自增；in-flight 的 startAutoRefresh 在 await 后检测代次变化即放弃重排 */
+  let autoRefreshEpoch = 0
+
+  /** 停止实时自动刷新定时器（同时使所有 in-flight 的 startAutoRefresh 失效） */
+  function stopAutoRefresh() {
+    autoRefreshEpoch++
+    if (autoRefreshTimer != null) {
+      clearInterval(autoRefreshTimer)
+      autoRefreshTimer = null
+    }
+  }
+
+  /** 启动实时自动刷新：间隔取后台动态配置，失败兜底 5 分钟 */
+  async function startAutoRefresh() {
+    stopAutoRefresh()
+    const epoch = autoRefreshEpoch
+    try {
+      const raw: any = await api.getRealtimeInterval()
+      const n = Number(raw?.intervalMinutes)
+      refreshIntervalMinutes.value = Number.isFinite(n) && n >= 1 && n <= 60 ? n : 5
+    } catch {
+      refreshIntervalMinutes.value = 5
+    }
+    // 等待配置期间如果已停止（切回 T-1 / 卸载 / 二次启动），代次已变化则放弃重排
+    if (autoRefreshEpoch !== epoch || dateRange.value !== 'realtime') return
+    autoRefreshTimer = setInterval(() => {
+      loadBusinessMetrics()
+    }, refreshIntervalMinutes.value * 60_000)
+  }
+
   const isRealtime = () => dateRange.value === 'realtime'
 
   /**
@@ -288,12 +321,19 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return raw
   }
 
-  /** 切换数据口径（前一天 / 当天实时）并重新拉取全部看板数据 */
+  /** 切换数据口径（前一天 / 当天实时）：实时口径启动自动刷新，T-1 口径停止 */
   async function setDateRange(range: DateRange) {
     if (dateRange.value === range) return
     dateRange.value = range
-    if (range !== 'realtime') computedAt.value = null
-    await loadBusinessMetrics()
+    if (range === 'realtime') {
+      computedAt.value = null
+      await startAutoRefresh()
+      await loadBusinessMetrics()
+    } else {
+      stopAutoRefresh()
+      computedAt.value = null
+      await loadBusinessMetrics()
+    }
   }
 
   async function loadDeveloperSummary() {
@@ -527,6 +567,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     dateRange,
     computedAt,
     realtimeError,
+    refreshIntervalMinutes,
+    startAutoRefresh,
+    stopAutoRefresh,
     setDateRange,
     isRealtime,
     loadDeveloperSummary,
