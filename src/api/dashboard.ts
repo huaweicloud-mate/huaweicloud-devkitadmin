@@ -105,19 +105,22 @@ export function getVoucherDistribution(dateRange?: DateRange) {
 
 // ======================== 活动统计 ========================
 
+/** 活动编码（活动统计口径） */
+const ACTIVITY_CODE = 'open-capability-2026-1024'
+
 /** 活动总览 KPI + 漏斗 */
 export function getActivitySummary() {
-  return http.get(`${BASE}/activity/summary`)
+  return http.get(`${BASE}/activity/summary`, { params: { activity_code: ACTIVITY_CODE } })
 }
 
 /** 活动完成趋势 */
 export function getActivityTrend() {
-  return http.get(`${BASE}/activity/trend`)
+  return http.get(`${BASE}/activity/trend`, { params: { activity_code: ACTIVITY_CODE } })
 }
 
 /** 活动转化率 */
 export function getActivityConversion() {
-  return http.get(`${BASE}/activity/conversion`)
+  return http.get(`${BASE}/activity/conversion`, { params: { activity_code: ACTIVITY_CODE } })
 }
 
 // ======================== 插件开源运营 ========================
