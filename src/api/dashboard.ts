@@ -2,14 +2,19 @@ import http from './axios'
 
 const BASE = '/rest/developer/server/hdkitservice/dashboard'
 
+/** 数据口径：yesterday（默认 T-1）/ realtime（当天实时） */
+export type DateRange = 'yesterday' | 'realtime'
+
+type DateRangeParam = DateRange | undefined
+
 /** 开发者概览 KPI */
-export function getDeveloperSummary() {
-  return http.get(`${BASE}/developer/summary`)
+export function getDeveloperSummary(dateRange?: DateRange) {
+  return http.get(`${BASE}/developer/summary`, { params: { dateRange } })
 }
 
 /** DAU/MAU 趋势 */
-export function getDeveloperTrend(days = 30) {
-  return http.get(`${BASE}/developer/trend`, { params: { days } })
+export function getDeveloperTrend(days = 30, dateRange?: DateRangeParam) {
+  return http.get(`${BASE}/developer/trend`, { params: { days, dateRange } })
 }
 
 /** Agent 接入分布 */
@@ -23,8 +28,8 @@ export function getNewUserTrend() {
 }
 
 /** 插件下载量趋势（GitHub + npm） */
-export function getDownloadTrend(days = 30) {
-  return http.get(`${BASE}/download/trend`, { params: { days } })
+export function getDownloadTrend(days = 30, dateRange?: DateRangeParam) {
+  return http.get(`${BASE}/download/trend`, { params: { days, dateRange } })
 }
 
 /** 下载渠道总量（npm / GitHub） */
@@ -40,62 +45,62 @@ export function getDownloadChannelDistribution() {
 // ======================== 开放能力 ========================
 
 /** 开放能力概览 KPI */
-export function getCapabilitySummary() {
-  return http.get(`${BASE}/capability/summary`)
+export function getCapabilitySummary(dateRange?: DateRange) {
+  return http.get(`${BASE}/capability/summary`, { params: { dateRange } })
 }
 
 /** 开放能力调用趋势 */
-export function getCapabilityTrend(days = 14) {
-  return http.get(`${BASE}/capability/trend`, { params: { days } })
+export function getCapabilityTrend(days = 14, dateRange?: DateRangeParam) {
+  return http.get(`${BASE}/capability/trend`, { params: { days, dateRange } })
 }
 
 /** 开放能力分布 */
-export function getCapabilityDistribution() {
-  return http.get(`${BASE}/capability/distribution`)
+export function getCapabilityDistribution(dateRange?: DateRange) {
+  return http.get(`${BASE}/capability/distribution`, { params: { dateRange } })
 }
 
 /** Skill 调用排行 */
-export function getSkillRanking(limit = 10) {
-  return http.get(`${BASE}/capability/skill/ranking`, { params: { limit } })
+export function getSkillRanking(limit = 10, dateRange?: DateRangeParam) {
+  return http.get(`${BASE}/capability/skill/ranking`, { params: { limit, dateRange } })
 }
 
 // ======================== 沙箱资源信息 ========================
 
 /** 沙箱资源概览 KPI */
-export function getSandboxSummary() {
-  return http.get(`${BASE}/sandbox/summary`)
+export function getSandboxSummary(dateRange?: DateRange) {
+  return http.get(`${BASE}/sandbox/summary`, { params: { dateRange } })
 }
 
 /** 沙箱拉取趋势 */
-export function getSandboxTrend() {
-  return http.get(`${BASE}/sandbox/trend`)
+export function getSandboxTrend(dateRange?: DateRange) {
+  return http.get(`${BASE}/sandbox/trend`, { params: { dateRange } })
 }
 
 /** 沙箱创建耗时分布 */
-export function getSandboxDuration() {
-  return http.get(`${BASE}/sandbox/duration`)
+export function getSandboxDuration(dateRange?: DateRange) {
+  return http.get(`${BASE}/sandbox/duration`, { params: { dateRange } })
 }
 
 /** 每小时沙箱拉取统计 */
-export function getSandboxHourly() {
-  return http.get(`${BASE}/sandbox/hourly`)
+export function getSandboxHourly(dateRange?: DateRange) {
+  return http.get(`${BASE}/sandbox/hourly`, { params: { dateRange } })
 }
 
 // ======================== 代金券资源 ========================
 
 /** 代金券总览 KPI */
-export function getVoucherSummary() {
-  return http.get(`${BASE}/voucher/summary`)
+export function getVoucherSummary(dateRange?: DateRange) {
+  return http.get(`${BASE}/voucher/summary`, { params: { dateRange } })
 }
 
 /** 代金券领取趋势 */
-export function getVoucherTrend() {
-  return http.get(`${BASE}/voucher/trend`)
+export function getVoucherTrend(dateRange?: DateRange) {
+  return http.get(`${BASE}/voucher/trend`, { params: { dateRange } })
 }
 
 /** 代金券面额分布 */
-export function getVoucherDistribution() {
-  return http.get(`${BASE}/voucher/distribution`)
+export function getVoucherDistribution(dateRange?: DateRange) {
+  return http.get(`${BASE}/voucher/distribution`, { params: { dateRange } })
 }
 
 // ======================== 活动统计 ========================

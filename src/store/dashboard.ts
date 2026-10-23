@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as api from '@/api/dashboard'
+import type { DateRange } from '@/api/dashboard'
 
 export interface DeveloperSummary {
   totalDevelopers: number
@@ -265,8 +266,36 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const loading = ref(false)
   const error = ref<string | null>(null)
 
+  /** 数据口径：yesterday（默认 T-1）/ realtime（当天实时） */
+  const dateRange = ref<DateRange>('yesterday')
+  /** 实时口径下后台返回的数据计算时间戳（缓存截止上次计算时刻） */
+  const computedAt = ref<string | null>(null)
+  const realtimeError = ref<string | null>(null)
+
+  const isRealtime = () => dateRange.value === 'realtime'
+
+  /**
+   * 实时口径响应解包：后台 dateRange=realtime 时返回 { dateRange, computedAt, data } 包装；
+   * T-1 口径返回原始 DTO（结构不变）。解包同时记录数据计算时间戳。
+   */
+  function unwrapRealtime(raw: any): any {
+    if (raw && typeof raw === 'object' && raw.dateRange === 'realtime' && 'data' in raw) {
+      computedAt.value = raw.computedAt ?? null
+      return raw.data
+    }
+    return raw
+  }
+
+  /** 切换数据口径（前一天 / 当天实时）并重新拉取全部看板数据 */
+  async function setDateRange(range: DateRange) {
+    if (dateRange.value === range) return
+    dateRange.value = range
+    if (range !== 'realtime') computedAt.value = null
+    await loadBusinessMetrics()
+  }
+
   async function loadDeveloperSummary() {
-    const raw: any = await api.getDeveloperSummary()
+    const raw: any = unwrapRealtime(await api.getDeveloperSummary(dateRange.value))
     developerSummary.value = {
       totalDevelopers: raw.totalDevelopers ?? 0,
       newUsersThisMonth: raw.newUsersToday ?? 0,
@@ -278,7 +307,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   async function loadDauTrend(days = 30) {
-    const raw: any = await api.getDeveloperTrend(days)
+    const raw: any = unwrapRealtime(await api.getDeveloperTrend(days, dateRange.value))
     dauTrend.value = raw?.points ?? raw ?? []
   }
 
@@ -298,7 +327,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   async function loadDownloadTrend(days = 30) {
-    const raw: any = await api.getDownloadTrend(days)
+    const raw: any = unwrapRealtime(await api.getDownloadTrend(days, dateRange.value))
     const npmDaily: Array<{ date: string; downloads: number }> = raw?.npmDaily ?? []
     const githubDaily: Array<{ date: string; downloads: number }> = raw?.githubDaily ?? []
     const githubMap = new Map(githubDaily.map(p => [p.date, p.downloads]))
@@ -320,12 +349,12 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   async function loadCapabilitySummary() {
-    const data: any = await api.getCapabilitySummary()
+    const data: any = unwrapRealtime(await api.getCapabilitySummary(dateRange.value))
     capabilitySummary.value = data
   }
 
   async function loadCapabilityTrend(days = 14) {
-    const raw: any = await api.getCapabilityTrend(days)
+    const raw: any = unwrapRealtime(await api.getCapabilityTrend(days, dateRange.value))
     if (raw?.dates && raw?.lines) {
       const flat: CapabilityTrendItem[] = []
       for (const line of raw.lines) {
@@ -340,47 +369,47 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   async function loadCapabilityDistribution() {
-    const raw: any = await api.getCapabilityDistribution()
+    const raw: any = unwrapRealtime(await api.getCapabilityDistribution(dateRange.value))
     capabilityDistribution.value = raw?.capabilities ?? raw ?? []
   }
 
   async function loadSkillRanking(limit = 10) {
-    const raw: any = await api.getSkillRanking(limit)
+    const raw: any = unwrapRealtime(await api.getSkillRanking(limit, dateRange.value))
     skillRanking.value = raw?.skills ?? raw ?? []
   }
 
   async function loadSandboxSummary() {
-    const data: any = await api.getSandboxSummary()
+    const data: any = unwrapRealtime(await api.getSandboxSummary(dateRange.value))
     sandboxSummary.value = data
   }
 
   async function loadSandboxTrend() {
-    const raw: any = await api.getSandboxTrend()
+    const raw: any = unwrapRealtime(await api.getSandboxTrend(dateRange.value))
     sandboxTrend.value = raw
   }
 
   async function loadSandboxDuration() {
-    const raw: any = await api.getSandboxDuration()
+    const raw: any = unwrapRealtime(await api.getSandboxDuration(dateRange.value))
     sandboxDuration.value = raw
   }
 
   async function loadSandboxHourly() {
-    const raw: any = await api.getSandboxHourly()
+    const raw: any = unwrapRealtime(await api.getSandboxHourly(dateRange.value))
     sandboxHourly.value = raw
   }
 
   async function loadVoucherSummary() {
-    const data: any = await api.getVoucherSummary()
+    const data: any = unwrapRealtime(await api.getVoucherSummary(dateRange.value))
     voucherSummary.value = data
   }
 
   async function loadVoucherTrend() {
-    const raw: any = await api.getVoucherTrend()
+    const raw: any = unwrapRealtime(await api.getVoucherTrend(dateRange.value))
     voucherTrend.value = raw
   }
 
   async function loadVoucherDistribution() {
-    const raw: any = await api.getVoucherDistribution()
+    const raw: any = unwrapRealtime(await api.getVoucherDistribution(dateRange.value))
     voucherDistribution.value = raw
   }
 
@@ -422,6 +451,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadBusinessMetrics() {
     loading.value = true
     error.value = null
+    realtimeError.value = null
     try {
       await Promise.all([
         loadDeveloperSummary(),
@@ -449,6 +479,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
       ])
     } catch (e: any) {
       error.value = e.message || 'Failed to load metrics'
+      if (isRealtime()) {
+        realtimeError.value = '当天实时数据加载失败，请稍后重试或切换回「前一天」口径'
+      }
     } finally {
       loading.value = false
     }
@@ -482,6 +515,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
     openSourceError,
     loading,
     error,
+    dateRange,
+    computedAt,
+    realtimeError,
+    setDateRange,
+    isRealtime,
     loadDeveloperSummary,
     loadDauTrend,
     loadAgentDistribution,
