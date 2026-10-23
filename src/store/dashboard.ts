@@ -296,6 +296,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     } catch {
       refreshIntervalMinutes.value = 5
     }
+    // 若等待配置期间已切回 T-1，则不重排定时器（防止 stale 协程残留周期轮询）
+    if (dateRange.value !== 'realtime') return
     autoRefreshTimer = setInterval(() => {
       loadBusinessMetrics()
     }, refreshIntervalMinutes.value * 60_000)
