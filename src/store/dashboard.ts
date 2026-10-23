@@ -416,17 +416,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 
   async function loadActivitySummary() {
-    const data: any = await api.getActivitySummary()
+    const data: any = unwrapRealtime(await api.getActivitySummary(dateRange.value))
     activitySummary.value = data
   }
 
   async function loadActivityTrend() {
-    const raw: any = await api.getActivityTrend()
+    const raw: any = unwrapRealtime(await api.getActivityTrend(dateRange.value))
     activityTrend.value = raw
   }
 
   async function loadActivityConversion() {
-    const raw: any = await api.getActivityConversion()
+    const raw: any = unwrapRealtime(await api.getActivityConversion(dateRange.value))
     activityConversion.value = raw
   }
 
