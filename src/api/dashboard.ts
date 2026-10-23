@@ -5,6 +5,11 @@ const BASE = '/rest/developer/server/hdkitservice/dashboard'
 /** 数据口径：yesterday（默认 T-1）/ realtime（当天实时） */
 export type DateRange = 'yesterday' | 'realtime'
 
+/** 当前实时刷新/聚合间隔（分钟），来自后台动态配置 */
+export function getRealtimeInterval() {
+  return http.get(`${BASE}/realtime/interval`)
+}
+
 type DateRangeParam = DateRange | undefined
 
 /** 开发者概览 KPI */

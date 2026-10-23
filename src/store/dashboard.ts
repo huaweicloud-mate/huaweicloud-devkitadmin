@@ -274,6 +274,33 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const computedAt = ref<string | null>(null)
   const realtimeError = ref<string | null>(null)
 
+  /** 实时自动刷新间隔（分钟），取自后台动态配置，失败兜底 5 */
+  const refreshIntervalMinutes = ref(5)
+  let autoRefreshTimer: ReturnType<typeof setInterval> | null = null
+
+  /** 停止实时自动刷新定时器 */
+  function stopAutoRefresh() {
+    if (autoRefreshTimer != null) {
+      clearInterval(autoRefreshTimer)
+      autoRefreshTimer = null
+    }
+  }
+
+  /** 启动实时自动刷新：间隔取后台动态配置，失败兜底 5 分钟 */
+  async function startAutoRefresh() {
+    stopAutoRefresh()
+    try {
+      const raw: any = await api.getRealtimeInterval()
+      const n = Number(raw?.intervalMinutes)
+      refreshIntervalMinutes.value = Number.isFinite(n) && n >= 1 && n <= 60 ? n : 5
+    } catch {
+      refreshIntervalMinutes.value = 5
+    }
+    autoRefreshTimer = setInterval(() => {
+      loadBusinessMetrics()
+    }, refreshIntervalMinutes.value * 60_000)
+  }
+
   const isRealtime = () => dateRange.value === 'realtime'
 
   /**
@@ -288,12 +315,19 @@ export const useDashboardStore = defineStore('dashboard', () => {
     return raw
   }
 
-  /** 切换数据口径（前一天 / 当天实时）并重新拉取全部看板数据 */
+  /** 切换数据口径（前一天 / 当天实时）：实时口径启动自动刷新，T-1 口径停止 */
   async function setDateRange(range: DateRange) {
     if (dateRange.value === range) return
     dateRange.value = range
-    if (range !== 'realtime') computedAt.value = null
-    await loadBusinessMetrics()
+    if (range === 'realtime') {
+      computedAt.value = null
+      await startAutoRefresh()
+      await loadBusinessMetrics()
+    } else {
+      stopAutoRefresh()
+      computedAt.value = null
+      await loadBusinessMetrics()
+    }
   }
 
   async function loadDeveloperSummary() {
@@ -527,6 +561,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     dateRange,
     computedAt,
     realtimeError,
+    refreshIntervalMinutes,
+    startAutoRefresh,
+    stopAutoRefresh,
     setDateRange,
     isRealtime,
     loadDeveloperSummary,
