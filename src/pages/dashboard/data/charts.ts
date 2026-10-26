@@ -416,23 +416,24 @@ export function buildActivityFunnelOption(
   }
 }
 
-/** 活动完成趋势（接收 API 三章节数据） */
+/** 活动完成趋势（接收 API 三章节数据；章节名来自活动配置，默认沿用通用标签） */
 export function buildActivityTrendOption(
   chapter1: Array<{ date: string; value: number }>,
   chapter2: Array<{ date: string; value: number }>,
   chapter3: Array<{ date: string; value: number }>,
+  labels: [string, string, string] = ['初章完成', '进阶章完成', '终章完成'],
 ): EChartsOption {
   const dates = chapter1.map(p => p.date)
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['初章完成', '进阶章完成', '终章完成'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: [...labels], right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 45, right: 20, top: 35, bottom: 30 },
     xAxis: { type: 'category', data: dates, ...axisStyle },
     yAxis: { type: 'value', ...axisStyle },
     series: [
-      { name: '初章完成', type: 'line', smooth: true, data: chapter1.map(p => p.value), itemStyle: { color: '#52C41A' } },
-      { name: '进阶章完成', type: 'line', smooth: true, data: chapter2.map(p => p.value), itemStyle: { color: '#FAAD14' } },
-      { name: '终章完成', type: 'line', smooth: true, data: chapter3.map(p => p.value), itemStyle: { color: '#722ED1' } },
+      { name: labels[0], type: 'line', smooth: true, data: chapter1.map(p => p.value), itemStyle: { color: '#52C41A' } },
+      { name: labels[1], type: 'line', smooth: true, data: chapter2.map(p => p.value), itemStyle: { color: '#FAAD14' } },
+      { name: labels[2], type: 'line', smooth: true, data: chapter3.map(p => p.value), itemStyle: { color: '#722ED1' } },
     ],
   }
 }

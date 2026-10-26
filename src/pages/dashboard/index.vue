@@ -298,6 +298,16 @@
 
         <!-- ======== Section 6: 活动统计 ======== -->
         <section v-if="activeSection === 's6'" class="section">
+          <div class="sub-section-title" style="display:flex;align-items:center;gap:12px">
+            <span>活动统计</span>
+            <select
+              :value="store.selectedActivityCode"
+              class="activity-select"
+              @change="onActivityChange"
+            >
+              <option v-for="a in store.activities" :key="a.code" :value="a.code">{{ a.name }}</option>
+            </select>
+          </div>
           <div class="kpi-grid">
             <KpiCard
               label="参与总人数"
@@ -361,6 +371,7 @@ import KpiCard from './components/KpiCard.vue'
 import ChartCard from './components/ChartCard.vue'
 import AlertBanner from './components/AlertBanner.vue'
 import { useDashboardStore, fmtYuanWithSymbol } from '@/store/dashboard'
+import { getActivityConfig } from './data/activity-config'
 import {
   getEmptyChartOption,
   buildDauTrendOption, buildAgentDistributionOption, buildNewUserTrendOption,
@@ -585,6 +596,7 @@ const activityTrendOpt = computed(() =>
         store.activityTrend.chapter1,
         store.activityTrend.chapter2,
         store.activityTrend.chapter3,
+        selectedActivityChapterLabels.value,
       )
     : getEmptyChartOption()
 )
@@ -593,6 +605,18 @@ const activityConvOpt = computed(() =>
     ? buildActivityConvOption(store.activityConversion.stages)
     : getEmptyChartOption()
 )
+
+/** 当前活动的章节标签（活动清单配置化，新增活动零后端发版） */
+const selectedActivityChapterLabels = computed<[string, string, string]>(() => {
+  const conf = getActivityConfig(store.selectedActivityCode)
+  return conf?.chapterLabels ?? ['初章完成', '进阶章完成', '终章完成']
+})
+
+/** 切换活动：配置驱动重新加载该活动统计 */
+function onActivityChange(e: Event) {
+  const code = (e.target as HTMLSelectElement).value
+  store.setActivityCode(code)
+}
 </script>
 
 <style lang="scss">
@@ -606,7 +630,16 @@ const activityConvOpt = computed(() =>
   padding-left: 10px;
   border-left: 3px solid #5b8def;
   margin-bottom: 16px;
-  line-height: 1.4;
+}
+.activity-select {
+  font-size: 13px;
+  color: #374151;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 8px;
+  background: #fff;
+  outline: none;
+  cursor: pointer;
 }
 
 // KPI badge (inside KpiCard slot)

@@ -1,7 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as api from '@/api/dashboard'
+import * as activityApi from '@/api/activity'
 import type { DateRange } from '@/api/dashboard'
+import { ACTIVITY_LIST, getActivityConfig } from '@/pages/dashboard/data/activity-config'
 
 export interface DeveloperSummary {
   totalDevelopers: number
@@ -260,6 +262,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const activitySummary = ref<ActivitySummary | null>(null)
   const activityTrend = ref<ActivityTrend | null>(null)
   const activityConversion = ref<ActivityConversion | null>(null)
+  /** 活动清单（前端配置化，新增活动无需后端发版） */
+  const activities = ACTIVITY_LIST
+  /** 当前选中的活动编码 */
+  const selectedActivityCode = ref<string>(ACTIVITY_LIST[0]?.code ?? '')
 
   const openSourceSummary = ref<OpenSourceSummary | null>(null)
   const openSourceReleases = ref<OpenSourceReleaseItem[]>([])
@@ -455,19 +461,27 @@ export const useDashboardStore = defineStore('dashboard', () => {
     voucherDistribution.value = raw
   }
 
-  async function loadActivitySummary() {
-    const data: any = unwrapRealtime(await api.getActivitySummary(dateRange.value))
-    activitySummary.value = data
+  /**
+   * 统一活动统计聚合：一次调用 GET /activity/stats，
+   * 按 summary / trend / conversion 命名字段分发到看板既有状态。
+   */
+  async function loadActivityStats() {
+    const raw: any = unwrapRealtime(
+      await activityApi.getActivityStats(selectedActivityCode.value),
+    )
+    activitySummary.value = raw?.summary ?? null
+    activityTrend.value = raw?.trend ?? null
+    activityConversion.value = raw?.conversion ?? null
   }
 
-  async function loadActivityTrend() {
-    const raw: any = unwrapRealtime(await api.getActivityTrend(dateRange.value))
-    activityTrend.value = raw
-  }
-
-  async function loadActivityConversion() {
-    const raw: any = unwrapRealtime(await api.getActivityConversion(dateRange.value))
-    activityConversion.value = raw
+  /** 切换活动（配置驱动）：更新选中编码并重新加载该活动统计 */
+  async function setActivityCode(code: string) {
+    if (!getActivityConfig(code) || code === selectedActivityCode.value) return
+    selectedActivityCode.value = code
+    activitySummary.value = null
+    activityTrend.value = null
+    activityConversion.value = null
+    await loadActivityStats()
   }
 
   async function loadOpenSource() {
@@ -521,9 +535,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
         loadVoucherSummary(),
         loadVoucherTrend(),
         loadVoucherDistribution(),
-        loadActivitySummary(),
-        loadActivityTrend(),
-        loadActivityConversion(),
+        loadActivityStats(),
         loadOpenSource(),
       ])
     } catch (e: any) {
@@ -558,6 +570,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     activitySummary,
     activityTrend,
     activityConversion,
+    activities,
+    selectedActivityCode,
+    setActivityCode,
+    loadActivityStats,
     openSourceSummary,
     openSourceReleases,
     openSourceContributors,
@@ -590,9 +606,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loadVoucherSummary,
     loadVoucherTrend,
     loadVoucherDistribution,
-    loadActivitySummary,
-    loadActivityTrend,
-    loadActivityConversion,
     loadOpenSource,
     loadBusinessMetrics,
   }

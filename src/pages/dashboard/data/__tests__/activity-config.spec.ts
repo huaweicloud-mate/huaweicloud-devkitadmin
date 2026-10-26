@@ -41,9 +41,9 @@ describe('activity-config', () => {
   })
 
   it('adding a new activity only requires one config entry', () => {
-    const extended = [
+    const extended: ActivityConfig[] = [
       ...ACTIVITY_LIST,
-      { code: 'new-activity-2099', name: '新活动', chapterLabels: ['一', '二', '三'] },
+      { code: 'new-activity-2099', name: '新活动', chapterLabels: ['一', '二', '三'] as [string, string, string] },
     ]
     expect(getActivityConfig('new-activity-2099', extended)?.name).toBe('新活动')
     expect(() => assertUniqueActivityCodes(extended)).not.toThrow()
