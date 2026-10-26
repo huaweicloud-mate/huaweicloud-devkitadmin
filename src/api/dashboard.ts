@@ -110,22 +110,30 @@ export function getVoucherDistribution(dateRange?: DateRange) {
 
 // ======================== 活动统计 ========================
 
-/** 活动编码（活动统计口径） */
-const ACTIVITY_CODE = 'open-capability-2026-1024'
-
-/** 活动总览 KPI + 漏斗 */
-export function getActivitySummary(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/summary`, { params: { activity_code: ACTIVITY_CODE, dateRange } })
+/** 活动下拉项 */
+export interface ActivityCodeItem {
+  code: string
+  name: string
 }
 
-/** 活动完成趋势 */
-export function getActivityTrend(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/trend`, { params: { activity_code: ACTIVITY_CODE, dateRange } })
+/** 活动下拉列表（最新在前，含已结束活动的历史） */
+export function getActivityCodes() {
+  return http.get(`${BASE}/activity/codes`)
 }
 
-/** 活动转化率 */
-export function getActivityConversion(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/conversion`, { params: { activity_code: ACTIVITY_CODE, dateRange } })
+/** 活动总览 KPI + 各阶段 */
+export function getActivitySummary(activityCode: string, dateRange?: DateRange) {
+  return http.get(`${BASE}/activity/summary`, { params: { activity_code: activityCode, dateRange } })
+}
+
+/** 活动各阶段完成趋势 */
+export function getActivityTrend(activityCode: string, dateRange?: DateRange) {
+  return http.get(`${BASE}/activity/trend`, { params: { activity_code: activityCode, dateRange } })
+}
+
+/** 活动阶段转化率 */
+export function getActivityConversion(activityCode: string, dateRange?: DateRange) {
+  return http.get(`${BASE}/activity/conversion`, { params: { activity_code: activityCode, dateRange } })
 }
 
 // ======================== 插件开源运营 ========================

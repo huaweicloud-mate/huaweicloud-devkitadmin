@@ -44,7 +44,7 @@ onBeforeUnmount(() => {
 
 watch(() => props.option, (newOpt) => {
   if (chart) {
-    chart.setOption(newOpt)
+    chart.setOption(newOpt, true)
   }
 }, { deep: true })
 </script>

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import * as api from '@/api/dashboard'
-import type { DateRange } from '@/api/dashboard'
+import type { DateRange, ActivityCodeItem } from '@/api/dashboard'
 
 export interface DeveloperSummary {
   totalDevelopers: number
@@ -201,21 +201,17 @@ export function fmtYuanWithSymbol(cents: number | undefined | null): string {
   return '¥' + (cents / 100).toLocaleString()
 }
 
-export interface ActivityFunnelStage {
-  name: string
+/** 活动阶段统计（数量/名称随活动而变，由后端返回） */
+export interface ActivityStageStat {
+  key: string
+  label: string
   value: number
   rate: number
 }
 
 export interface ActivitySummary {
   totalParticipants: number
-  chapter1Completed: number
-  chapter2Completed: number
-  chapter3Completed: number
-  chapter1Rate: number
-  chapter2Rate: number
-  chapter3Rate: number
-  funnel: ActivityFunnelStage[]
+  stages: ActivityStageStat[]
 }
 
 export interface ActivityTrendPoint {
@@ -223,10 +219,14 @@ export interface ActivityTrendPoint {
   value: number
 }
 
+export interface ActivityStageTrend {
+  key: string
+  label: string
+  points: ActivityTrendPoint[]
+}
+
 export interface ActivityTrend {
-  chapter1: ActivityTrendPoint[]
-  chapter2: ActivityTrendPoint[]
-  chapter3: ActivityTrendPoint[]
+  stages: ActivityStageTrend[]
 }
 
 export interface ActivityConvItem {
@@ -260,6 +260,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const activitySummary = ref<ActivitySummary | null>(null)
   const activityTrend = ref<ActivityTrend | null>(null)
   const activityConversion = ref<ActivityConversion | null>(null)
+
+  /** 活动下拉项（后端返回，最新在前） */
+  const activityCodeOptions = ref<ActivityCodeItem[]>([])
+  /** 当前选中的活动 Code（默认 = 列表首个=最新） */
+  const activityCode = ref<string>('')
 
   const openSourceSummary = ref<OpenSourceSummary | null>(null)
   const openSourceReleases = ref<OpenSourceReleaseItem[]>([])
@@ -455,19 +460,42 @@ export const useDashboardStore = defineStore('dashboard', () => {
     voucherDistribution.value = raw
   }
 
+  /** 加载活动下拉列表；首次确定默认活动（列表首个=最新） */
+  async function loadActivityCodes() {
+    const raw: any = await api.getActivityCodes()
+    const list: any[] = Array.isArray(raw) ? raw : (raw?.codes ?? raw?.data ?? [])
+    activityCodeOptions.value = list.map(c => ({ code: c.code, name: c.name ?? c.code }))
+    if (!activityCode.value) {
+      activityCode.value = activityCodeOptions.value[0]?.code ?? ''
+    }
+  }
+
   async function loadActivitySummary() {
-    const data: any = unwrapRealtime(await api.getActivitySummary(dateRange.value))
-    activitySummary.value = data
+    if (!activityCode.value) return
+    const data: any = unwrapRealtime(await api.getActivitySummary(activityCode.value, dateRange.value))
+    activitySummary.value = data ?? { totalParticipants: 0, stages: [] }
   }
 
   async function loadActivityTrend() {
-    const raw: any = unwrapRealtime(await api.getActivityTrend(dateRange.value))
-    activityTrend.value = raw
+    if (!activityCode.value) return
+    const raw: any = unwrapRealtime(await api.getActivityTrend(activityCode.value, dateRange.value))
+    activityTrend.value = raw ?? { stages: [] }
   }
 
   async function loadActivityConversion() {
-    const raw: any = unwrapRealtime(await api.getActivityConversion(dateRange.value))
-    activityConversion.value = raw
+    if (!activityCode.value) return
+    const raw: any = unwrapRealtime(await api.getActivityConversion(activityCode.value, dateRange.value))
+    activityConversion.value = raw ?? { stages: [] }
+  }
+
+  /** 切换活动 Code：仅重查活动统计 3 个接口，不影响其它模块 */
+  async function setActivityCode(code: string) {
+    if (!code || activityCode.value === code) return
+    activityCode.value = code
+    activitySummary.value = null
+    activityTrend.value = null
+    activityConversion.value = null
+    await Promise.all([loadActivitySummary(), loadActivityTrend(), loadActivityConversion()])
   }
 
   async function loadOpenSource() {
@@ -502,6 +530,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     error.value = null
     realtimeError.value = null
     try {
+      await loadActivityCodes()
       await Promise.all([
         loadDeveloperSummary(),
         loadDauTrend(),
@@ -558,6 +587,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
     activitySummary,
     activityTrend,
     activityConversion,
+    activityCodeOptions,
+    activityCode,
+    setActivityCode,
     openSourceSummary,
     openSourceReleases,
     openSourceContributors,
@@ -593,6 +625,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loadActivitySummary,
     loadActivityTrend,
     loadActivityConversion,
+    loadActivityCodes,
     loadOpenSource,
     loadBusinessMetrics,
   }

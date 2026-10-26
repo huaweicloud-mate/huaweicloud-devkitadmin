@@ -416,24 +416,25 @@ export function buildActivityFunnelOption(
   }
 }
 
-/** 活动完成趋势（接收 API 三章节数据） */
+/** 活动各阶段完成趋势（阶段数与名称随活动可变） */
 export function buildActivityTrendOption(
-  chapter1: Array<{ date: string; value: number }>,
-  chapter2: Array<{ date: string; value: number }>,
-  chapter3: Array<{ date: string; value: number }>,
+  series: Array<{ name: string; points: Array<{ date: string; value: number }> }>,
 ): EChartsOption {
-  const dates = chapter1.map(p => p.date)
+  const dates = series[0]?.points.map(p => p.date) ?? []
+  const palette = ['#52C41A', '#FAAD14', '#722ED1', '#5B8DEF', '#13C2C2']
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: ['初章完成', '进阶章完成', '终章完成'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: series.map(s => s.name), right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 45, right: 20, top: 35, bottom: 30 },
     xAxis: { type: 'category', data: dates, ...axisStyle },
     yAxis: { type: 'value', ...axisStyle },
-    series: [
-      { name: '初章完成', type: 'line', smooth: true, data: chapter1.map(p => p.value), itemStyle: { color: '#52C41A' } },
-      { name: '进阶章完成', type: 'line', smooth: true, data: chapter2.map(p => p.value), itemStyle: { color: '#FAAD14' } },
-      { name: '终章完成', type: 'line', smooth: true, data: chapter3.map(p => p.value), itemStyle: { color: '#722ED1' } },
-    ],
+    series: series.map((s, i) => ({
+      name: s.name,
+      type: 'line',
+      smooth: true,
+      data: s.points.map(p => p.value),
+      itemStyle: { color: palette[i % palette.length] },
+    })),
   }
 }
 
