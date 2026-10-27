@@ -110,22 +110,23 @@ export function getVoucherDistribution(dateRange?: DateRange) {
 
 // ======================== 活动统计 ========================
 
-/** 活动编码（活动统计口径） */
-const ACTIVITY_CODE = 'open-capability-2026-1024'
+// 活动清单已前端配置化（src/pages/dashboard/data/activity-config.ts），
+// 统一走聚合端点 GET /activity/stats（见 src/api/activity.ts）。
+// 以下旧端点后端已标记 deprecated，仅为过渡保留，前端切换完成后删除。
 
-/** 活动总览 KPI + 漏斗 */
+/** @deprecated 过渡保留：请改用 activity.ts 的 getActivityStats 聚合端点 */
 export function getActivitySummary(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/summary`, { params: { activity_code: ACTIVITY_CODE, dateRange } })
+  return http.get(`${BASE}/activity/summary`, { params: { dateRange } })
 }
 
-/** 活动完成趋势 */
+/** @deprecated 过渡保留：请改用 activity.ts 的 getActivityStats 聚合端点 */
 export function getActivityTrend(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/trend`, { params: { activity_code: ACTIVITY_CODE, dateRange } })
+  return http.get(`${BASE}/activity/trend`, { params: { dateRange } })
 }
 
-/** 活动转化率 */
+/** @deprecated 过渡保留：请改用 activity.ts 的 getActivityStats 聚合端点 */
 export function getActivityConversion(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/conversion`, { params: { activity_code: ACTIVITY_CODE, dateRange } })
+  return http.get(`${BASE}/activity/conversion`, { params: { dateRange } })
 }
 
 // ======================== 插件开源运营 ========================
