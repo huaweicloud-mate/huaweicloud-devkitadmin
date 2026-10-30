@@ -76,6 +76,31 @@ export function buildAgentDistributionOption(data: Array<{ name: string; count: 
   }
 }
 
+/** devkit 客户端版本分布（横向柱状，按用户数） */
+export function buildVersionDistributionOption(data: Array<{ version: string; count: number }>): EChartsOption {
+  const sorted = [...data].sort((a, b) => a.count - b.count)
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 130, right: 40, top: 10, bottom: 25 },
+    xAxis: { type: 'value', ...axisStyle },
+    yAxis: {
+      type: 'category',
+      data: sorted.map(d => d.version),
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, fontSize: 11 },
+    },
+    series: [{
+      type: 'bar',
+      data: sorted.map(d => ({
+        value: d.count,
+        itemStyle: { color: '#34D399', borderRadius: [0, 4, 4, 0] },
+      })),
+      barWidth: '55%',
+      label: { show: true, position: 'right', fontSize: 11, color: '#6B7280' },
+    }] as any[],
+  }
+}
+
 /** 新增用户趋势（柱状 + 环比/同比双折线，接收 API 数据） */
 export function buildNewUserTrendOption(data: Array<{ month: string; newUserCount: number; momRate: number | null; yoyRate: number | null }>): EChartsOption {
   return {

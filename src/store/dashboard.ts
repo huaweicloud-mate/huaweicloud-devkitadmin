@@ -25,6 +25,12 @@ export interface AgentDistributionItem {
   count: number
 }
 
+export interface VersionDistributionItem {
+  version: string
+  count: number
+  percentage: number
+}
+
 export interface NewUserTrendItem {
   month: string
   newUserCount: number
@@ -244,6 +250,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const developerSummary = ref<DeveloperSummary | null>(null)
   const dauTrend = ref<DauTrendItem[]>([])
   const agentDistribution = ref<AgentDistributionItem[]>([])
+  const versionDistribution = ref<VersionDistributionItem[]>([])
   const newUserTrend = ref<NewUserTrendItem[]>([])
   const downloadChannelDist = ref<DownloadChannelItem[]>([])
   const downloadTrend = ref<DownloadTrendItem[]>([])
@@ -362,6 +369,11 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadAgentDistribution() {
     const raw: any = await api.getAgentDistribution()
     agentDistribution.value = raw?.agents ?? raw ?? []
+  }
+
+  async function loadVersionDistribution() {
+    const raw: any = await api.getVersionDistribution()
+    versionDistribution.value = raw?.versions ?? raw?.data?.versions ?? []
   }
 
   async function loadNewUserTrend() {
@@ -520,6 +532,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
         loadDeveloperSummary(),
         loadDauTrend(),
         loadAgentDistribution(),
+        loadVersionDistribution(),
         loadNewUserTrend(),
         loadDownloadChannelSummary(),
         loadDownloadChannelDist(),
@@ -552,6 +565,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     developerSummary,
     dauTrend,
     agentDistribution,
+    versionDistribution,
     newUserTrend,
     downloadChannelDist,
     downloadTrend,
@@ -591,6 +605,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loadDeveloperSummary,
     loadDauTrend,
     loadAgentDistribution,
+    loadVersionDistribution,
     loadNewUserTrend,
     loadDownloadChannelDist,
     loadDownloadTrend,
