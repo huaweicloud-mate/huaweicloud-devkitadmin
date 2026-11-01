@@ -463,6 +463,53 @@ export function buildActivityTrendOption(
   }
 }
 
+/**
+ * Issue #119 多活动对比趋势（多线）：每个活动 × 三个章节各一条线，
+ * 章节固定配色（绿/橙/紫），活动间以线型区分（实线/虚线/点线循环）。
+ */
+export function buildActivityTrendMultiOption(
+  activities: Array<{
+    name: string
+    chapter1: Array<{ date: string; value: number }>
+    chapter2: Array<{ date: string; value: number }>
+    chapter3: Array<{ date: string; value: number }>
+  }>,
+): EChartsOption {
+  const dates = activities.flatMap(a => a.chapter1.map(p => p.date))
+    .filter((d, i, arr) => arr.indexOf(d) === i)
+    .sort()
+  const chapterMeta = [
+    { key: 'chapter1', label: '初章完成', color: '#52C41A' },
+    { key: 'chapter2', label: '进阶章完成', color: '#FAAD14' },
+    { key: 'chapter3', label: '终章完成', color: '#722ED1' },
+  ] as const
+  const lineTypes = ['solid', 'dashed', 'dotted'] as const
+  const series: any[] = []
+  for (const [ai, act] of activities.entries()) {
+    for (const ch of chapterMeta) {
+      const points = (act as any)[ch.key] as Array<{ date: string; value: number }>
+      if (!points?.length) continue
+      const byDate = new Map(points.map(p => [p.date, p.value]))
+      series.push({
+        name: `${act.name}·${ch.label}`,
+        type: 'line',
+        smooth: true,
+        data: dates.map(d => byDate.get(d) ?? 0),
+        lineStyle: { type: lineTypes[ai % lineTypes.length] },
+        itemStyle: { color: ch.color },
+      })
+    }
+  }
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: series.map(s => s.name), right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 45, right: 20, top: 35, bottom: 30 },
+    xAxis: { type: 'category', data: dates, ...axisStyle },
+    yAxis: { type: 'value', ...axisStyle },
+    series,
+  }
+}
+
 /** 活动转化率对比（接收 API stages 数据，按值动态着色） */
 export function buildActivityConvOption(
   stages: Array<{ label: string; rate: number }>,

@@ -115,24 +115,8 @@ export function getVoucherDistribution(dateRange?: DateRange) {
 
 // ======================== 活动统计 ========================
 
-// 活动清单已前端配置化（src/pages/dashboard/data/activity-config.ts），
-// 统一走聚合端点 GET /activity/stats（见 src/api/activity.ts）。
-// 以下旧端点后端已标记 deprecated，仅为过渡保留，前端切换完成后删除。
-
-/** @deprecated 过渡保留：请改用 activity.ts 的 getActivityStats 聚合端点 */
-export function getActivitySummary(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/summary`, { params: { dateRange } })
-}
-
-/** @deprecated 过渡保留：请改用 activity.ts 的 getActivityStats 聚合端点 */
-export function getActivityTrend(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/trend`, { params: { dateRange } })
-}
-
-/** @deprecated 过渡保留：请改用 activity.ts 的 getActivityStats 聚合端点 */
-export function getActivityConversion(dateRange?: DateRange) {
-  return http.get(`${BASE}/activity/conversion`, { params: { dateRange } })
-}
+// Issue #119 起：活动统计迁移至 src/api/activity.ts（/activity/stats 聚合端点
+// + /activity/list 活动自动发现），本文件不再承载活动统计接口。
 
 // ======================== 插件开源运营 ========================
 
