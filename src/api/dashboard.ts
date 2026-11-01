@@ -27,6 +27,11 @@ export function getAgentDistribution() {
   return http.get(`${BASE}/agent/distribution`)
 }
 
+/** devkit 客户端版本分布（按 plugin_version 去重用户） */
+export function getVersionDistribution(dateRange?: DateRangeParam) {
+  return http.get(`${BASE}/version/distribution`, { params: { dateRange } })
+}
+
 /** 新增用户趋势（近6个月环比/同比） */
 export function getNewUserTrend() {
   return http.get(`${BASE}/developer/new-user-trend`)
