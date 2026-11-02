@@ -5,9 +5,27 @@ vi.mock('../../api/axios', () => ({
 }))
 
 import http from '../../api/axios'
-import { getActivityList, getActivityStats } from '../../api/activity'
+import { getActivityList, getActivityCodes, getActivityStats } from '../../api/activity'
 
 const mockedGet = vi.mocked(http.get)
+
+describe('getActivityCodes (GET /activity/codes)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('requests the activity codes endpoint', async () => {
+    mockedGet.mockResolvedValue([
+      { code: 'open-capability-2026-1024', name: '闯关活动' },
+      { code: 'open-capability-2026', name: '开放能力闯关' },
+    ])
+    const list = await getActivityCodes()
+    expect(mockedGet).toHaveBeenCalledWith(
+      '/rest/developer/server/hdkitservice/dashboard/activity/codes',
+    )
+    expect(list).toHaveLength(2)
+  })
+})
 
 describe('getActivityList (GET /activity/list)', () => {
   beforeEach(() => {

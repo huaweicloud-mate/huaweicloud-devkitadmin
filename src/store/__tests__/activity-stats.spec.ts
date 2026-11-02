@@ -3,6 +3,7 @@ import { createPinia, setActivePinia } from 'pinia'
 
 vi.mock('@/api/activity', () => ({
   getActivityList: vi.fn(),
+  getActivityCodes: vi.fn(),
   getActivityStats: vi.fn(),
 }))
 
@@ -11,6 +12,7 @@ import { useDashboardStore } from '@/store/dashboard'
 import { ALL_ACTIVITY_CODE } from '@/pages/dashboard/data/activity-config'
 
 const mockedGetActivityList = vi.mocked(activityApi.getActivityList)
+const mockedGetActivityCodes = vi.mocked(activityApi.getActivityCodes)
 const mockedGetActivityStats = vi.mocked(activityApi.getActivityStats)
 
 function stage(key: string, label: string, value: number, total: number) {
@@ -56,6 +58,7 @@ describe('活动统计多选对比 store（Issue #119）', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.clearAllMocks()
+    mockedGetActivityCodes.mockResolvedValue([])
   })
 
   it('列表非空时默认勾选第一个（最新有数据活动）', async () => {
@@ -153,5 +156,27 @@ describe('活动统计多选对比 store（Issue #119）', () => {
     expect(mockedGetActivityStats).toHaveBeenLastCalledWith([])
     // 全部 + 多活动 → 多选视图，items 全量
     expect(store.selectedActivityItems).toHaveLength(2)
+  })
+
+  it('配置里无数据的活动也出现在下拉列表中（暂无快照）', async () => {
+    mockedGetActivityCodes.mockResolvedValue([
+      { code: 'open-capability-2026-1024', name: '闯关活动' },
+      { code: 'a-1', name: '活动一' },
+    ] as any)
+    mockedGetActivityList.mockResolvedValue([
+      { code: 'a-1', name: '活动一', latest_snapshot_date: '2026-10-31' },
+    ] as any)
+    mockedGetActivityStats.mockResolvedValue(multiResponse() as any)
+
+    const store = useDashboardStore()
+    await store.loadActivityBoard()
+
+    // 无数据的 1024 也出现在列表里
+    expect(store.activityList.map(a => a.code)).toContain('open-capability-2026-1024')
+    // 无数据的活动 latest_snapshot_date 为 null
+    const noData = store.activityList.find(a => a.code === 'open-capability-2026-1024')
+    expect(noData?.latest_snapshot_date).toBeNull()
+    // 有数据的活动仍默认优先勾选
+    expect(store.selectedActivityCodes).toEqual(['a-1'])
   })
 })
