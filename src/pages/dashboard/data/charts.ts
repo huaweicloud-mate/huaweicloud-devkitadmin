@@ -321,6 +321,175 @@ export function buildSandboxHourlyOption(hourly: Array<{ hour: number; count: nu
   }
 }
 
+// ======================== Section 4.5: 沙箱观测（Issue #134，#121 后端） ========================
+
+/** 沙箱复连间隔分布（6 桶柱状 + p50/p90 标注线，秒） */
+export function buildSandboxRevisitIntervalOption(
+  buckets: Array<{ label: string; order: number; count: number }>,
+  p50Seconds: number | null,
+  p90Seconds: number | null,
+): EChartsOption {
+  const sorted = [...buckets].sort((a, b) => a.order - b.order)
+  const markLines: any[] = []
+  if (p50Seconds != null) {
+    markLines.push({ yAxis: p50Seconds, name: 'p50' })
+  }
+  if (p90Seconds != null) {
+    markLines.push({ yAxis: p90Seconds, name: 'p90' })
+  }
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    legend: { data: ['用户数'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 50, right: 30, top: 30, bottom: 45 },
+    xAxis: { type: 'category', data: sorted.map(b => b.label), ...axisStyle },
+    yAxis: { type: 'value', name: '用户数', ...axisStyle },
+    series: [{
+      name: '用户数',
+      type: 'bar',
+      data: sorted.map(b => ({
+        value: b.count,
+        itemStyle: { color: '#5B8DEF', borderRadius: [4, 4, 0, 0] },
+      })),
+      barWidth: '50%',
+      label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' },
+      markLine: markLines.length
+        ? {
+            symbol: 'none',
+            silent: true,
+            lineStyle: { type: 'dashed', color: '#FAAD14' },
+            label: { formatter: '{b}: {c}s', fontSize: 11, color: '#FAAD14' },
+            data: markLines,
+          }
+        : undefined,
+    }] as any[],
+  }
+}
+
+/** 沙箱闲置天数分布（柱状，>24h/72h 桶高亮为橙/红） */
+export function buildSandboxIdleOption(
+  buckets: Array<{ label: string; order: number; count: number }>,
+): EChartsOption {
+  const sorted = [...buckets].sort((a, b) => a.order - b.order)
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 50, right: 30, top: 20, bottom: 45 },
+    xAxis: { type: 'category', data: sorted.map(b => b.label), ...axisStyle },
+    yAxis: { type: 'value', name: '沙箱数', ...axisStyle },
+    series: [{
+      type: 'bar',
+      data: sorted.map(b => ({
+        value: b.count,
+        itemStyle: {
+          color: /72|h/i.test(b.label) ? '#FF4D4F' : /24|d/i.test(b.label) ? '#FAAD14' : '#5B8DEF',
+          borderRadius: [4, 4, 0, 0],
+        },
+      })),
+      barWidth: '50%',
+      label: { show: true, position: 'top', fontSize: 11, color: '#6B7280' },
+    }] as any[],
+  }
+}
+
+/** 沙箱失败率逐日趋势（成功率% 折线 + 失败次数柱，双轴） */
+export function buildSandboxErrorTrendOption(
+  daily: Array<{ date: string; total: number; success: number; successRate: number }>,
+): EChartsOption {
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['失败次数', '成功率%'], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    grid: { left: 50, right: 50, top: 35, bottom: 30 },
+    xAxis: {
+      type: 'category',
+      data: daily.map(d => d.date),
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, interval: Math.max(0, Math.floor(daily.length / 10)) },
+    },
+    yAxis: [
+      { type: 'value', name: '次数', ...axisStyle },
+      { type: 'value', name: '成功率%', max: 100, ...axisStyle, axisLabel: { ...axisStyle.axisLabel, formatter: '{value}%' } },
+    ],
+    series: [
+      {
+        name: '失败次数',
+        type: 'bar',
+        data: daily.map(d => Math.max(0, d.total - d.success)),
+        itemStyle: { color: '#FF4D4F', borderRadius: [3, 3, 0, 0] },
+        barWidth: '40%',
+      },
+      {
+        name: '成功率%',
+        type: 'line',
+        yAxisIndex: 1,
+        smooth: true,
+        data: daily.map(d => +d.successRate.toFixed(1)),
+        itemStyle: { color: '#52C41A' },
+      },
+    ],
+  }
+}
+
+/** 沙箱 error_code Top10（横向柱状） */
+export function buildSandboxErrorCodeOption(
+  items: Array<{ errorCode: string; count: number }>,
+): EChartsOption {
+  const sorted = [...items].sort((a, b) => a.count - b.count)
+  return {
+    tooltip: { trigger: 'axis', axisPointer: { type: 'shadow' } },
+    grid: { left: 110, right: 40, top: 10, bottom: 25 },
+    xAxis: { type: 'value', ...axisStyle },
+    yAxis: {
+      type: 'category',
+      data: sorted.map(d => d.errorCode),
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, fontSize: 11 },
+    },
+    series: [{
+      type: 'bar',
+      data: sorted.map(d => ({
+        value: d.count,
+        itemStyle: { color: '#FF4D4F', borderRadius: [0, 4, 4, 0] },
+      })),
+      barWidth: '55%',
+      label: { show: true, position: 'right', fontSize: 11, color: '#6B7280' },
+    }] as any[],
+  }
+}
+
+/** 沙箱成本拆分（template×flavor create 次数柱状，Top10） */
+export function buildSandboxCostOption(
+  items: Array<{ templateId: string; flavorId: string; createCount: number; distinctUsers: number }>,
+): EChartsOption {
+  const sorted = [...items].sort((a, b) => b.createCount - a.createCount).slice(0, 10).reverse()
+  return {
+    tooltip: {
+      trigger: 'axis',
+      axisPointer: { type: 'shadow' },
+      formatter: (ps: any) => {
+        const p = Array.isArray(ps) ? ps[0] : ps
+        const it = sorted[p.dataIndex]
+        return `${p.name}<br/>create 次数: <b>${p.value}</b><br/>去重用户数: <b>${it?.distinctUsers ?? '--'}</b>`
+      },
+    },
+    grid: { left: 150, right: 40, top: 10, bottom: 25 },
+    xAxis: { type: 'value', name: 'create 次数', ...axisStyle },
+    yAxis: {
+      type: 'category',
+      data: sorted.map(d => `${d.templateId}·${d.flavorId}`),
+      ...axisStyle,
+      axisLabel: { ...axisStyle.axisLabel, fontSize: 11 },
+    },
+    series: [{
+      type: 'bar',
+      data: sorted.map(d => ({
+        value: d.createCount,
+        itemStyle: { color: '#722ED1', borderRadius: [0, 4, 4, 0] },
+      })),
+      barWidth: '55%',
+      label: { show: true, position: 'right', fontSize: 11, color: '#6B7280' },
+    }] as any[],
+  }
+}
+
 // ======================== Section 5: 代金券 ========================
 
 /** 代金券领取趋势（接收 API 数据，amount 为分，需 /100 转元） */

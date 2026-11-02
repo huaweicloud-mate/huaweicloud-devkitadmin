@@ -96,6 +96,29 @@ export function getSandboxHourly(dateRange?: DateRange) {
   return http.get(`${BASE}/sandbox/hourly`, { params: { dateRange } })
 }
 
+// ======================== 沙箱观测（Issue #134，#121 后端已上线） ========================
+// 固定近 30 天窗口、只读，不接受 dateRange 参数（与后端 /sandbox/revisit-interval 等 4 个端点口径一致）
+
+/** 同 dev_stage_id 相邻成功 connect 事件间隔分布（6 桶 + p50/p90） */
+export function getSandboxRevisitInterval() {
+  return http.get(`${BASE}/sandbox/revisit-interval`)
+}
+
+/** 去重 dev_stage_id 闲置时长分布 + 超阈计数（idleThresholdHours 默认 24/72） */
+export function getSandboxIdle(idleThresholdHours?: number[]) {
+  return http.get(`${BASE}/sandbox/idle`, { params: { idleThresholdHours } })
+}
+
+/** connect 失败率 / error_code Top10 / 慢建连 Top10 / 逐日成功率趋势 */
+export function getSandboxErrorStats() {
+  return http.get(`${BASE}/sandbox/error-stats`)
+}
+
+/** action='create' 按 (template_id, flavor_id) 分组成本拆解 */
+export function getSandboxCostBreakdown() {
+  return http.get(`${BASE}/sandbox/cost-breakdown`)
+}
+
 // ======================== 代金券资源 ========================
 
 /** 代金券总览 KPI */

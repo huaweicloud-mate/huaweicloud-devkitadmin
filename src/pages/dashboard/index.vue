@@ -142,6 +142,7 @@
             <KpiCard label="开放能力调用总次数" :value="fmt(store.capabilitySummary?.totalCalls)" trend="累计调用" trend-dir="up" accent="blue" icon="🛠️" />
             <KpiCard label="Skill 调用总次数" :value="fmt(store.capabilitySummary?.skillCalls)" trend="累计调用" trend-dir="up" accent="green" icon="🔗" />
             <KpiCard label="MCP 调用总次数" :value="fmt(store.capabilitySummary?.mcpCalls)" trend="累计调用" trend-dir="up" accent="orange" icon="⚡" />
+            <KpiCard label="CLI 调用总次数" :value="fmt(store.capabilitySummary?.cliCalls)" trend="累计调用" trend-dir="up" accent="orange" icon="🔧" />
           </div>
           <div class="chart-row two">
             <ChartCard title="调用次数趋势（Skill / MCP / CLI）" desc="近14天 Skill调用、MCP调用、CLI调用次数趋势" :option="capTrendOpt" />
@@ -222,10 +223,10 @@
             />
             <KpiCard
               label="平均拉起耗时"
-              :value="store.sandboxSummary?.avgDurationSec?.toFixed(1) ?? '--'"
+              :value="avgDurationText"
               unit="秒"
-              :trend="`${store.sandboxSummary?.avgDurationDeltaSec != null && store.sandboxSummary.avgDurationDeltaSec >= 0 ? '↑' : '↓'} ${Math.abs(store.sandboxSummary?.avgDurationDeltaSec ?? 0).toFixed(1)}s 较前日`"
-              :trend-dir="store.sandboxSummary?.avgDurationDeltaSec != null && store.sandboxSummary.avgDurationDeltaSec >= 0 ? 'up' : 'down'"
+              :trend="avgDurationTrend"
+              :trend-dir="avgDurationTrendDir"
               accent="orange"
               icon="⏱️"
             />
@@ -236,6 +237,45 @@
           </div>
           <div class="chart-row one">
             <ChartCard :title="`每小时沙箱用户数（${dayWord}）`" :desc="`${dayWord}各时段沙箱去重用户数分布，识别使用高峰`" :option="sandboxHourlyOpt" :height="260" />
+          </div>
+
+          <!-- ======== 沙箱观测（Issue #134，#121 后端 30 天固定窗口） ======== -->
+          <div class="sub-section-title" style="margin-top:24px">沙箱观测（近 30 天）</div>
+          <div class="chart-row two">
+            <ChartCard
+              title="沙箱复连间隔分布"
+              desc="同沙箱相邻成功 connect 事件间隔分布（connect 事件近似口径），p50/p90 虚线标注"
+              :option="sandboxRevisitOpt"
+              :height="300"
+            />
+            <ChartCard
+              title="沙箱闲置时长分布"
+              desc="去重沙箱距最后成功 connect 的闲置时长分布（按用户最后使用时间统计，非实时状态），&gt;24h 橙色 / &gt;72h 红色高亮"
+              :option="sandboxIdleOpt"
+              :height="300"
+            />
+          </div>
+          <div class="chart-row two">
+            <ChartCard
+              title="沙箱建连成功率趋势"
+              :desc="`connect 失败次数与成功率逐日趋势（近 30 天）· 失败率 ${failRateText}`"
+              :option="sandboxErrorTrendOpt"
+              :height="300"
+            />
+            <ChartCard
+              title="沙箱错误码 Top10"
+              desc="近 30 天 connect 失败 error_code 次数排行"
+              :option="sandboxErrorCodeOpt"
+              :height="300"
+            />
+          </div>
+          <div class="chart-row one">
+            <ChartCard
+              title="沙箱成本拆分（template × flavor）"
+              desc="近 30 天 create 次数 Top10（组合键 template_id·flavor_id，悬停查看去重用户数）"
+              :option="sandboxCostOpt"
+              :height="320"
+            />
           </div>
         </section>
 
@@ -454,6 +494,8 @@ import {
   buildDownloadPieOption, buildDownloadTrendOption,
   buildCapabilityTrendOption, buildCapabilityPieOption, buildSkillRankOption,
   buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
+  buildSandboxRevisitIntervalOption, buildSandboxIdleOption,
+  buildSandboxErrorTrendOption, buildSandboxErrorCodeOption, buildSandboxCostOption,
   buildVoucherTrendOption, buildVoucherPieOption,
   buildActivityFunnelOption, buildActivityTrendOption, buildActivityTrendMultiOption, buildActivityConvOption,
   buildStarDownloadTrendOption, buildContributorActivityOption,
@@ -726,6 +768,66 @@ const sandboxDurationOpt = computed(() =>
 const sandboxHourlyOpt = computed(() =>
   store.sandboxHourly?.hourly?.length
     ? buildSandboxHourlyOption(store.sandboxHourly.hourly)
+    : getEmptyChartOption()
+)
+
+// ==================== 沙箱观测（Issue #134） ====================
+
+/** #113 空态适配：avgDurationSec / delta 为 null 时显示 -- */
+const avgDurationText = computed(() =>
+  store.sandboxSummary?.avgDurationSec != null
+    ? store.sandboxSummary.avgDurationSec.toFixed(1)
+    : '--'
+)
+const avgDurationTrend = computed(() => {
+  const delta = store.sandboxSummary?.avgDurationDeltaSec
+  if (store.sandboxSummary?.avgDurationSec == null) return '-- 较前日'
+  const arrow = delta != null && delta >= 0 ? '↑' : '↓'
+  return `${arrow} ${Math.abs(delta ?? 0).toFixed(1)}s 较前日`
+})
+const avgDurationTrendDir = computed(() => {
+  const delta = store.sandboxSummary?.avgDurationDeltaSec
+  if (delta == null || store.sandboxSummary?.avgDurationSec == null) return 'flat'
+  return delta >= 0 ? 'up' : 'down'
+})
+
+const sandboxRevisitOpt = computed(() =>
+  store.sandboxRevisitInterval?.buckets?.length
+    ? buildSandboxRevisitIntervalOption(
+        store.sandboxRevisitInterval.buckets,
+        store.sandboxRevisitInterval.p50Seconds,
+        store.sandboxRevisitInterval.p90Seconds,
+      )
+    : getEmptyChartOption()
+)
+
+const sandboxIdleOpt = computed(() =>
+  store.sandboxIdle?.buckets?.length
+    ? buildSandboxIdleOption(store.sandboxIdle.buckets)
+    : getEmptyChartOption()
+)
+
+const failRateText = computed(() =>
+  store.sandboxErrorStats?.totalEvents
+    ? `${(store.sandboxErrorStats.failRate ?? 0).toFixed(1)}%`
+    : '--'
+)
+
+const sandboxErrorTrendOpt = computed(() =>
+  store.sandboxErrorStats?.dailyTrend?.length
+    ? buildSandboxErrorTrendOption(store.sandboxErrorStats.dailyTrend)
+    : getEmptyChartOption()
+)
+
+const sandboxErrorCodeOpt = computed(() =>
+  store.sandboxErrorStats?.topErrorCodes?.length
+    ? buildSandboxErrorCodeOption(store.sandboxErrorStats.topErrorCodes)
+    : getEmptyChartOption()
+)
+
+const sandboxCostOpt = computed(() =>
+  store.sandboxCostBreakdown?.items?.length
+    ? buildSandboxCostOption(store.sandboxCostBreakdown.items)
     : getEmptyChartOption()
 )
 

@@ -71,6 +71,8 @@ export interface CapabilitySummary {
   todayCalls: number
   skillCalls: number
   mcpCalls: number
+  /** CLI 调用总次数（Issue #115 后端新增，#134 前端补齐） */
+  cliCalls: number
 }
 
 export interface CapabilityTrendItem {
@@ -135,8 +137,9 @@ export interface SandboxSummary {
   totalUsers: number
   dailyUsers: number
   dailyUsersChainRatio: number
-  avgDurationSec: number
-  avgDurationDeltaSec: number
+  /** 平均拉起耗时（秒）；#113 起后端无数据时返回 null */
+  avgDurationSec: number | null
+  avgDurationDeltaSec: number | null
   slaTarget: string
 }
 
@@ -170,6 +173,91 @@ export interface SandboxHourlyPoint {
 export interface SandboxHourly {
   statDate: string
   hourly: SandboxHourlyPoint[]
+}
+
+// ==================== 沙箱观测（Issue #134，对齐 hdkitservice #121 DTO） ====================
+
+export interface SandboxRevisitBucket {
+  label: string
+  order: number
+  count: number
+}
+
+/** 同 dev_stage_id 相邻成功 connect 事件间隔（connect 事件近似口径） */
+export interface SandboxRevisitInterval {
+  windowStart: string
+  windowEnd: string
+  p50Seconds: number | null
+  p90Seconds: number | null
+  buckets: SandboxRevisitBucket[]
+  note: string
+}
+
+export interface SandboxIdleBucket {
+  label: string
+  order: number
+  count: number
+}
+
+export interface SandboxIdleThreshold {
+  thresholdHours: number
+  count: number
+}
+
+/** 去重 dev_stage_id 闲置时长分布（用户最后使用时间，非实时状态） */
+export interface SandboxIdle {
+  windowStart: string
+  windowEnd: string
+  distinctDevStages: number
+  buckets: SandboxIdleBucket[]
+  thresholds: SandboxIdleThreshold[]
+  note: string
+}
+
+export interface SandboxErrorCodeItem {
+  errorCode: string
+  count: number
+}
+
+export interface SandboxSlowConnect {
+  devStageId: string
+  durationMs: number | null
+  errorCode: string | null
+  createdAt: string | null
+}
+
+export interface SandboxDailyTrendPoint {
+  date: string
+  total: number
+  success: number
+  successRate: number
+}
+
+/** connect 失败率 / 错误码 Top10 / 慢建连 Top10 / 逐日成功率趋势 */
+export interface SandboxErrorStats {
+  windowStart: string
+  windowEnd: string
+  totalEvents: number
+  failEvents: number
+  failRate: number
+  topErrorCodes: SandboxErrorCodeItem[]
+  slowestConnects: SandboxSlowConnect[]
+  dailyTrend: SandboxDailyTrendPoint[]
+}
+
+export interface SandboxCostItem {
+  templateId: string
+  flavorId: string
+  createCount: number
+  distinctUsers: number
+}
+
+/** action='create' 按 (template_id, flavor_id) 分组成本拆解 */
+export interface SandboxCostBreakdown {
+  windowStart: string
+  windowEnd: string
+  items: SandboxCostItem[]
+  total: SandboxCostItem | null
 }
 
 export interface VoucherSummary {
@@ -270,6 +358,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const sandboxTrend = ref<SandboxTrend | null>(null)
   const sandboxDuration = ref<SandboxDuration | null>(null)
   const sandboxHourly = ref<SandboxHourly | null>(null)
+  const sandboxRevisitInterval = ref<SandboxRevisitInterval | null>(null)
+  const sandboxIdle = ref<SandboxIdle | null>(null)
+  const sandboxErrorStats = ref<SandboxErrorStats | null>(null)
+  const sandboxCostBreakdown = ref<SandboxCostBreakdown | null>(null)
   const voucherSummary = ref<VoucherSummary | null>(null)
   const voucherTrend = ref<VoucherTrend | null>(null)
   const voucherDistribution = ref<VoucherDistribution | null>(null)
@@ -502,6 +594,27 @@ export const useDashboardStore = defineStore('dashboard', () => {
     sandboxHourly.value = raw
   }
 
+  // 沙箱观测 4 接口为固定近 30 天窗口（无 dateRange 包装），直接赋值
+  async function loadSandboxRevisitInterval() {
+    const raw: any = await api.getSandboxRevisitInterval()
+    sandboxRevisitInterval.value = raw
+  }
+
+  async function loadSandboxIdle() {
+    const raw: any = await api.getSandboxIdle()
+    sandboxIdle.value = raw
+  }
+
+  async function loadSandboxErrorStats() {
+    const raw: any = await api.getSandboxErrorStats()
+    sandboxErrorStats.value = raw
+  }
+
+  async function loadSandboxCostBreakdown() {
+    const raw: any = await api.getSandboxCostBreakdown()
+    sandboxCostBreakdown.value = raw
+  }
+
   async function loadVoucherSummary() {
     const data: any = unwrapRealtime(await api.getVoucherSummary(dateRange.value))
     voucherSummary.value = data
@@ -634,6 +747,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
         loadSandboxTrend(),
         loadSandboxDuration(),
         loadSandboxHourly(),
+        loadSandboxRevisitInterval(),
+        loadSandboxIdle(),
+        loadSandboxErrorStats(),
+        loadSandboxCostBreakdown(),
         loadVoucherSummary(),
         loadVoucherTrend(),
         loadVoucherDistribution(),
@@ -667,6 +784,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     sandboxTrend,
     sandboxDuration,
     sandboxHourly,
+    sandboxRevisitInterval,
+    sandboxIdle,
+    sandboxErrorStats,
+    sandboxCostBreakdown,
     voucherSummary,
     voucherTrend,
     voucherDistribution,
@@ -714,6 +835,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     loadSandboxTrend,
     loadSandboxDuration,
     loadSandboxHourly,
+    loadSandboxRevisitInterval,
+    loadSandboxIdle,
+    loadSandboxErrorStats,
+    loadSandboxCostBreakdown,
     loadVoucherSummary,
     loadVoucherTrend,
     loadVoucherDistribution,
