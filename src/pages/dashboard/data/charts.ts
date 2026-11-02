@@ -380,7 +380,8 @@ export function buildSandboxIdleOption(
       data: sorted.map(b => ({
         value: b.count,
         itemStyle: {
-          color: /72|h/i.test(b.label) ? '#FF4D4F' : /24|d/i.test(b.label) ? '#FAAD14' : '#5B8DEF',
+          // #134 review fix: 按 order 判定（后端桶升序，L1-2 <24h 蓝 / L3-4 24h-72h 橙 / L5+ ≥72h 红）
+          color: (b.order ?? 99) >= 5 ? '#FF4D4F' : (b.order ?? 99) >= 3 ? '#FAAD14' : '#5B8EFF',
           borderRadius: [4, 4, 0, 0],
         },
       })),
