@@ -11,16 +11,18 @@ export interface ActivityListItem {
   latest_snapshot_date: string | null
 }
 
-/** 活动统计三段（与后端 DTO 对齐） */
+/** 活动单个阶段统计（阶段数量/名称随活动而变，后端配置驱动） */
+export interface ActivityStageStat {
+  key: string
+  label: string
+  value: number
+  rate: number
+}
+
+/** 活动统计三段（与后端 DTO 对齐：动态阶段 stages） */
 export interface ActivitySummary {
   totalParticipants: number
-  chapter1Completed: number
-  chapter2Completed: number
-  chapter3Completed: number
-  chapter1Rate: number
-  chapter2Rate: number
-  chapter3Rate: number
-  funnel: Array<{ name: string; value: number; rate: number }>
+  stages: ActivityStageStat[]
 }
 
 export interface ActivityTrendPoint {
@@ -28,10 +30,14 @@ export interface ActivityTrendPoint {
   value: number
 }
 
+export interface ActivityStageTrend {
+  key: string
+  label: string
+  points: ActivityTrendPoint[]
+}
+
 export interface ActivityTrend {
-  chapter1: ActivityTrendPoint[]
-  chapter2: ActivityTrendPoint[]
-  chapter3: ActivityTrendPoint[]
+  stages: ActivityStageTrend[]
 }
 
 export interface ActivityConversion {

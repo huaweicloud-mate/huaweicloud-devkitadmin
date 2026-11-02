@@ -343,9 +343,7 @@
             <div class="all-summary-title">Σ 全部活动汇总（{{ store.selectedActivityItems.length }} 个活动求和）</div>
             <div class="all-summary-metrics">
               <span>参与 <b>{{ fmt(allActivitySummary?.totalParticipants) }}</b></span>
-              <span>初章完成 <b>{{ fmt(allActivitySummary?.chapter1Completed) }}</b>（{{ rateText(allActivitySummary?.chapter1Rate) }}）</span>
-              <span>进阶章完成 <b>{{ fmt(allActivitySummary?.chapter2Completed) }}</b>（{{ rateText(allActivitySummary?.chapter2Rate) }}）</span>
-              <span>终章完成 <b>{{ fmt(allActivitySummary?.chapter3Completed) }}</b>（{{ rateText(allActivitySummary?.chapter3Rate) }}）</span>
+              <span v-for="st in (allActivitySummary?.stages ?? [])" :key="st.key">{{ st.label }}完成 <b>{{ fmt(st.value) }}</b>（{{ rateText(st.rate) }}）</span>
             </div>
             <div class="all-summary-note">⚠ {{ multiSumNote }}</div>
           </div>
@@ -364,28 +362,14 @@
                   icon="🎯"
                 />
                 <KpiCard
-                  label="初章完成人数"
-                  :value="fmt(item.summary?.chapter1Completed)"
-                  :trend="`完成率 ${rateText(item.summary?.chapter1Rate)}`"
+                  v-for="(st, i) in (item.summary?.stages ?? [])"
+                  :key="st.key"
+                  :label="`${st.label}完成人数`"
+                  :value="fmt(st.value)"
+                  :trend="`完成率 ${rateText(st.rate)}`"
                   trend-dir="flat"
-                  accent="green"
-                  icon="📖"
-                />
-                <KpiCard
-                  label="进阶章完成人数"
-                  :value="fmt(item.summary?.chapter2Completed)"
-                  :trend="`完成率 ${rateText(item.summary?.chapter2Rate)}`"
-                  trend-dir="flat"
-                  accent="orange"
-                  icon="📚"
-                />
-                <KpiCard
-                  label="终章完成人数"
-                  :value="fmt(item.summary?.chapter3Completed)"
-                  :trend="`完成率 ${rateText(item.summary?.chapter3Rate)}`"
-                  trend-dir="flat"
-                  accent="purple"
-                  icon="🏆"
+                  :accent="activityStageStyle(i).accent"
+                  :icon="activityStageStyle(i).icon"
                 />
               </div>
             </div>
@@ -400,28 +384,14 @@
               icon="🎯"
             />
             <KpiCard
-              label="初章完成人数"
-              :value="fmt(store.activitySummary?.chapter1Completed)"
-              :trend="`完成率 ${rateText(store.activitySummary?.chapter1Rate)}`"
+              v-for="(st, i) in (store.activitySummary?.stages ?? [])"
+              :key="st.key"
+              :label="`${st.label}完成人数`"
+              :value="fmt(st.value)"
+              :trend="`完成率 ${rateText(st.rate)}`"
               trend-dir="flat"
-              accent="green"
-              icon="📖"
-            />
-            <KpiCard
-              label="进阶章完成人数"
-              :value="fmt(store.activitySummary?.chapter2Completed)"
-              :trend="`完成率 ${rateText(store.activitySummary?.chapter2Rate)}`"
-              trend-dir="flat"
-              accent="orange"
-              icon="📚"
-            />
-            <KpiCard
-              label="终章完成人数"
-              :value="fmt(store.activitySummary?.chapter3Completed)"
-              :trend="`完成率 ${rateText(store.activitySummary?.chapter3Rate)}`"
-              trend-dir="flat"
-              accent="purple"
-              icon="🏆"
+              :accent="activityStageStyle(i).accent"
+              :icon="activityStageStyle(i).icon"
             />
           </div>
 
@@ -476,7 +446,7 @@ import KpiCard from './components/KpiCard.vue'
 import ChartCard from './components/ChartCard.vue'
 import AlertBanner from './components/AlertBanner.vue'
 import { useDashboardStore, fmtYuanWithSymbol } from '@/store/dashboard'
-import { ALL_ACTIVITY_CODE, MULTI_SUM_NOTE, activityChapterLabels } from './data/activity-config'
+import { ALL_ACTIVITY_CODE, MULTI_SUM_NOTE } from './data/activity-config'
 import type { ActivityStatsItem } from '@/api/activity'
 import {
   getEmptyChartOption,
@@ -570,24 +540,24 @@ const contributorActivityOpt = computed(() =>
 
 // Activity computed options
 const activityFunnelOpt = computed(() =>
-  store.activitySummary?.funnel?.length
-    ? buildActivityFunnelOption(store.activitySummary.funnel)
+  store.activitySummary?.stages?.length
+    ? buildActivityFunnelOption(
+        store.activitySummary.stages.map(s => ({ name: s.label, value: s.value, rate: s.rate })),
+      )
     : getEmptyChartOption()
 )
 
 const funnelAlertText = computed(() => {
   const s = store.activitySummary
+  const conv = store.activityConversion?.stages ?? []
   if (!s || s.totalParticipants === 0) return '暂无活动数据'
-  const c1Drop = Math.round(100 - s.chapter1Rate)
-  const c2Drop = s.chapter1Rate > 0 ? Math.round(100 - (s.chapter2Rate / s.chapter1Rate * 100)) : '--'
-  const c3Drop = s.chapter2Rate > 0 ? Math.round(100 - (s.chapter3Rate / s.chapter2Rate * 100)) : '--'
-  const drops = [
-    { stage: '参与→初章', rate: c1Drop },
-    { stage: '初章→进阶章', rate: c2Drop },
-    { stage: '进阶章→终章', rate: c3Drop },
-  ]
-  const maxDrop = drops.reduce((a, b) => Number(a.rate) > Number(b.rate) ? a : b)
-  return `${maxDrop.stage}流失率最高（${maxDrop.rate}%），建议优化该环节任务难度或增加引导。终章完成率${s.chapter3Rate != null ? Math.round(s.chapter3Rate) : '--'}%仍有提升空间。`
+  if (!conv.length) return '暂无活动数据'
+  let maxDrop = { label: '', rate: Number.NEGATIVE_INFINITY }
+  for (const c of conv) {
+    const drop = 100 - c.rate
+    if (drop > maxDrop.rate) maxDrop = { label: c.label, rate: drop }
+  }
+  return `${maxDrop.label}流失率最高（${Math.round(maxDrop.rate)}%），建议优化该环节任务难度或增加引导。`
 })
 
 function initFunnel() {
@@ -661,8 +631,10 @@ async function toggleActivityCode(code: string) {
 
 /** 单活动漏斗图 option（多选并排用） */
 function activityItemFunnelOpt(item: ActivityStatsItem) {
-  return item.summary?.funnel?.length
-    ? buildActivityFunnelOption(item.summary.funnel)
+  return item.summary?.stages?.length
+    ? buildActivityFunnelOption(
+        item.summary.stages.map(s => ({ name: s.label, value: s.value, rate: s.rate })),
+      )
     : getEmptyChartOption()
 }
 
@@ -771,23 +743,16 @@ const voucherPieOpt = computed(() =>
 const activityTrendOpt = computed(() => {
   if (store.isActivityMulti) {
     const items = store.selectedActivityItems
-      .filter(i => i.trend?.chapter1?.length)
+      .filter(i => i.trend?.stages?.length)
     return items.length
       ? buildActivityTrendMultiOption(items.map(i => ({
           name: i.name,
-          chapter1: i.trend!.chapter1,
-          chapter2: i.trend!.chapter2,
-          chapter3: i.trend!.chapter3,
+          stages: i.trend!.stages,
         })))
       : getEmptyChartOption()
   }
-  return store.activityTrend?.chapter1?.length
-    ? buildActivityTrendOption(
-        store.activityTrend.chapter1,
-        store.activityTrend.chapter2,
-        store.activityTrend.chapter3,
-        selectedActivityChapterLabels.value,
-      )
+  return store.activityTrend?.stages?.length
+    ? buildActivityTrendOption(store.activityTrend.stages)
     : getEmptyChartOption()
 })
 const activityConvOpt = computed(() =>
@@ -796,11 +761,15 @@ const activityConvOpt = computed(() =>
     : getEmptyChartOption()
 )
 
-/** 当前活动的章节标签（覆盖表优先，新增活动零前端改动） */
-const selectedActivityChapterLabels = computed<[string, string, string]>(() => {
-  const selected = store.selectedActivityCodes.find(c => c !== ALL_ACTIVITY_CODE)
-  return activityChapterLabels(selected ?? '')
-})
+/** 活动阶段 KPI 样式：按阶段序号循环配色与图标 */
+const ACTIVITY_STAGE_ACCENTS = ['green', 'orange', 'purple', 'cyan', 'red', 'blue'] as const
+const ACTIVITY_STAGE_ICONS = ['📖', '📚', '🏆', '🚀', '⭐', '🎖'] as const
+function activityStageStyle(i: number) {
+  return {
+    accent: ACTIVITY_STAGE_ACCENTS[i % ACTIVITY_STAGE_ACCENTS.length],
+    icon: ACTIVITY_STAGE_ICONS[i % ACTIVITY_STAGE_ICONS.length],
+  }
+}
 </script>
 
 <style lang="scss">

@@ -217,21 +217,16 @@ export function fmtYuanWithSymbol(cents: number | undefined | null): string {
   return '¥' + (cents / 100).toLocaleString()
 }
 
-export interface ActivityFunnelStage {
-  name: string
+export interface ActivityStageStat {
+  key: string
+  label: string
   value: number
   rate: number
 }
 
 export interface ActivitySummary {
   totalParticipants: number
-  chapter1Completed: number
-  chapter2Completed: number
-  chapter3Completed: number
-  chapter1Rate: number
-  chapter2Rate: number
-  chapter3Rate: number
-  funnel: ActivityFunnelStage[]
+  stages: ActivityStageStat[]
 }
 
 export interface ActivityTrendPoint {
@@ -239,10 +234,14 @@ export interface ActivityTrendPoint {
   value: number
 }
 
+export interface ActivityStageTrend {
+  key: string
+  label: string
+  points: ActivityTrendPoint[]
+}
+
 export interface ActivityTrend {
-  chapter1: ActivityTrendPoint[]
-  chapter2: ActivityTrendPoint[]
-  chapter3: ActivityTrendPoint[]
+  stages: ActivityStageTrend[]
 }
 
 export interface ActivityConvItem {
