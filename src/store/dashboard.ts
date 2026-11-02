@@ -1,9 +1,17 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import * as api from '@/api/dashboard'
 import * as activityApi from '@/api/activity'
 import type { DateRange } from '@/api/dashboard'
-import { ACTIVITY_LIST, getActivityConfig } from '@/pages/dashboard/data/activity-config'
+import {
+  ALL_ACTIVITY_CODE,
+  activityDisplayName,
+} from '@/pages/dashboard/data/activity-config'
+import type {
+  ActivityListItem,
+  ActivityStatsItem,
+  ActivityStatsMulti,
+} from '@/api/activity'
 
 export interface DeveloperSummary {
   totalDevelopers: number
@@ -266,13 +274,50 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const voucherSummary = ref<VoucherSummary | null>(null)
   const voucherTrend = ref<VoucherTrend | null>(null)
   const voucherDistribution = ref<VoucherDistribution | null>(null)
+  // ==================== 活动统计（Issue #119 多选对比 + 自动发现） ====================
+  /** 后端自动发现的活动列表（按 MAX(snapshot_date) 降序） */
+  const activityList = ref<ActivityListItem[]>([])
+  /** 当前勾选的活动 code；含 ALL_ACTIVITY_CODE 表示「全部活动·汇总」 */
+  const selectedActivityCodes = ref<string[]>([])
+  /** /activity/stats 多选响应 */
+  const activityStats = ref<ActivityStatsMulti | null>(null)
+  const activityLoading = ref(false)
+
+  /** 实际请求的活动码（不含虚拟全部项；空数组 = 全部活动） */
+  const effectiveActivityCodes = computed(() =>
+    selectedActivityCodes.value.filter(code => code !== ALL_ACTIVITY_CODE),
+  )
+
+  /** 是否多选（>1 个活动，或勾了「全部」且列表非空） */
+  const isActivityMulti = computed(() => {
+    if (selectedActivityCodes.value.includes(ALL_ACTIVITY_CODE)) {
+      return activityList.value.length > 1
+    }
+    return selectedActivityCodes.value.length > 1
+  })
+
+  /** 各选中活动的统计项（勾「全部」= 列表内全部活动） */
+  const selectedActivityItems = computed<ActivityStatsItem[]>(() => {
+    if (!activityStats.value) return []
+    if (selectedActivityCodes.value.includes(ALL_ACTIVITY_CODE)) {
+      return activityStats.value.items
+    }
+    return activityStats.value.items.filter(item =>
+      selectedActivityCodes.value.includes(item.code),
+    )
+  })
+
+  // 兼容旧视图的单选展示 refs（由当前选中项填充；多选时取 all 汇总）
   const activitySummary = ref<ActivitySummary | null>(null)
   const activityTrend = ref<ActivityTrend | null>(null)
   const activityConversion = ref<ActivityConversion | null>(null)
-  /** 活动清单（前端配置化，新增活动无需后端发版） */
-  const activities = ACTIVITY_LIST
-  /** 当前选中的活动编码 */
-  const selectedActivityCode = ref<string>(ACTIVITY_LIST[0]?.code ?? '')
+
+  /** 活动下拉展示名（覆盖表优先） */
+  function activityNameOf(code: string): string {
+    if (code === ALL_ACTIVITY_CODE) return '全部活动·汇总'
+    const item = activityList.value.find(a => a.code === code)
+    return activityDisplayName(code, item?.name)
+  }
 
   const openSourceSummary = ref<OpenSourceSummary | null>(null)
   const openSourceReleases = ref<OpenSourceReleaseItem[]>([])
@@ -473,26 +518,71 @@ export const useDashboardStore = defineStore('dashboard', () => {
     voucherDistribution.value = raw
   }
 
-  /**
-   * 统一活动统计聚合：一次调用 GET /activity/stats，
-   * 按 summary / trend / conversion 命名字段分发到看板既有状态。
-   */
-  async function loadActivityStats() {
-    const raw: any = unwrapRealtime(
-      await activityApi.getActivityStats(selectedActivityCode.value),
-    )
-    activitySummary.value = raw?.summary ?? null
-    activityTrend.value = raw?.trend ?? null
-    activityConversion.value = raw?.conversion ?? null
+  /** 活动列表：接口发现 + activity-config 覆盖；默认勾选第一个（最新有数据活动） */
+  async function loadActivityList() {
+    const raw: any = await activityApi.getActivityList()
+    const list: ActivityListItem[] = raw ?? []
+    activityList.value = list.map(item => ({
+      code: item.code,
+      name: activityDisplayName(item.code, item.name),
+      latest_snapshot_date: item.latest_snapshot_date ?? null,
+    }))
   }
 
-  /** 切换活动（配置驱动）：更新选中编码并重新加载该活动统计 */
-  async function setActivityCode(code: string) {
-    if (!getActivityConfig(code) || code === selectedActivityCode.value) return
-    selectedActivityCode.value = code
-    activitySummary.value = null
-    activityTrend.value = null
-    activityConversion.value = null
+  /** 默认勾选：列表第一个；空列表/无最近快照时间兜底勾「全部活动·汇总」 */
+  function applyDefaultActivitySelection() {
+    const first = activityList.value.find(
+      a => a.code && a.latest_snapshot_date,
+    )
+    selectedActivityCodes.value = first ? [first.code] : [ALL_ACTIVITY_CODE]
+  }
+
+  /** 拉取当前勾选活动的统计（空参=全部活动），并同步旧展示 refs */
+  async function loadActivityStats() {
+    activityLoading.value = true
+    try {
+      const codes = effectiveActivityCodes.value
+      const data = unwrapRealtime(await activityApi.getActivityStats(codes))
+      activityStats.value = data
+      syncLegacyActivityRefs()
+    } finally {
+      activityLoading.value = false
+    }
+  }
+
+  /** 单选时旧 refs 指向该活动数据；多选/全部时指向 all 汇总 */
+  function syncLegacyActivityRefs() {
+    const stats = activityStats.value
+    if (!stats) return
+    if (!isActivityMulti.value && effectiveActivityCodes.value.length === 1) {
+      const item = stats.items.find(i => i.code === effectiveActivityCodes.value[0])
+      activitySummary.value = item?.summary ?? stats.all.summary ?? null
+      activityTrend.value = item?.trend ?? stats.all.trend ?? null
+      activityConversion.value = item?.conversion ?? stats.all.conversion ?? null
+    } else {
+      activitySummary.value = stats.all.summary ?? null
+      activityTrend.value = stats.all.trend ?? null
+      activityConversion.value = stats.all.conversion ?? null
+    }
+  }
+
+  /** 更新勾选（勾「全部」时忽略其它码）并重新拉取统计 */
+  async function selectActivities(codes: string[]) {
+    const normalized = codes.includes(ALL_ACTIVITY_CODE)
+      ? [ALL_ACTIVITY_CODE]
+      : codes.filter(c => c && c !== ALL_ACTIVITY_CODE)
+    selectedActivityCodes.value = normalized
+    await loadActivityStats()
+  }
+
+  /** 活动看板入口：发现列表 → 默认勾选 → 拉取统计 */
+  async function loadActivityBoard() {
+    try {
+      await loadActivityList()
+    } catch {
+      activityList.value = []
+    }
+    applyDefaultActivitySelection()
     await loadActivityStats()
   }
 
@@ -548,7 +638,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
         loadVoucherSummary(),
         loadVoucherTrend(),
         loadVoucherDistribution(),
-        loadActivityStats(),
+        loadActivityBoard(),
         loadOpenSource(),
       ])
     } catch (e: any) {
@@ -584,10 +674,17 @@ export const useDashboardStore = defineStore('dashboard', () => {
     activitySummary,
     activityTrend,
     activityConversion,
-    activities,
-    selectedActivityCode,
-    setActivityCode,
+    activityList,
+    selectedActivityCodes,
+    activityStats,
+    activityLoading,
+    isActivityMulti,
+    selectedActivityItems,
+    activityNameOf,
+    loadActivityList,
     loadActivityStats,
+    selectActivities,
+    loadActivityBoard,
     openSourceSummary,
     openSourceReleases,
     openSourceContributors,

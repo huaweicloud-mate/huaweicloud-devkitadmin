@@ -1,45 +1,45 @@
 /**
- * 活动清单配置（前端配置化）
- *
- * 新增活动只需在此追加一条配置，看板即可展示，无需后端发版：
- * 后端统一聚合端点 GET /activity/stats?activity_code=xxx 对活动码通用查询。
+ * Issue #119 活动配置覆盖：仅做名称/文案覆盖，不做活动清单（活动由后端
+ * /activity/list 自动发现，新活动有数据即出现，前端零改动）。
+ * 兼容保留 #39 的章节标签覆盖（未配置活动走默认标签）。
  */
+
+/** 「全部活动·汇总」虚拟选项文案 */
+export const ALL_ACTIVITY_LABEL = '全部活动·汇总'
+
+/** 空列表/无最近快照时间时的兜底勾选：全部活动·汇总 */
+export const ALL_ACTIVITY_CODE = '__all__'
+
+/** 活动名称覆盖表（code → 展示名），未命中时用后端返回的 name */
+export const ACTIVITY_NAME_OVERRIDES: Record<string, string> = {
+  // 'open-capability-2026-1024': '开放能力实战 1024 活动',
+}
+
+/** KPI 汇总行口径标注（跨活动求和，同人可能重复计数） */
+export const MULTI_SUM_NOTE = '跨活动求和口径：同一用户参与多个活动会被重复计数，比率按汇总基数重算'
+
+/** 章节标签覆盖表（code → 三章节展示标签），未命中用默认标签 */
+export const ACTIVITY_CHAPTER_LABEL_OVERRIDES: Record<string, [string, string, string]> = {
+  // 'open-capability-2026-1024': ['初章完成', '进阶章完成', '终章完成'],
+}
+
+/** 取活动展示名：覆盖表优先，其次后端 name，兜底 code */
+export function activityDisplayName(code: string, backendName?: string | null): string {
+  return ACTIVITY_NAME_OVERRIDES[code] ?? (backendName && backendName.trim() ? backendName : code)
+}
+
+/** 取活动章节标签（覆盖优先，默认通用标签） */
+export function activityChapterLabels(code: string): [string, string, string] {
+  return ACTIVITY_CHAPTER_LABEL_OVERRIDES[code] ?? ['初章完成', '进阶章完成', '终章完成']
+}
+
+/** 兼容 #39 语义的配置查找：现仅返回章节标签覆盖（活动清单已由后端发现） */
 export interface ActivityConfig {
-  /** 活动编码（与后端 activity_stats_snapshot.activity_code 对应） */
   code: string
-  /** 活动展示名 */
-  name: string
-  /** 三个章节的展示标签（漏斗/趋势/转化图共用） */
   chapterLabels: [string, string, string]
-  /** 活动说明（可选） */
-  description?: string
 }
 
-/** 活动清单：新增活动在此追加一条即可 */
-export const ACTIVITY_LIST: ActivityConfig[] = [
-  {
-    code: 'open-capability-2026-1024',
-    name: '开放能力实战 1024 活动',
-    chapterLabels: ['初章完成', '进阶章完成', '终章完成'],
-    description: '参与 → 初章完成 → 进阶章完成 → 终章完成',
-  },
-]
-
-/** 校验活动配置：activity_code 必须唯一，避免看板选择歧义 */
-export function assertUniqueActivityCodes(list: ActivityConfig[]): void {
-  const seen = new Set<string>()
-  for (const a of list) {
-    if (seen.has(a.code)) {
-      throw new Error(`duplicate activity_code in activity-config: ${a.code}`)
-    }
-    seen.add(a.code)
-  }
-}
-
-// 模块加载时校验默认清单，尽早暴露配置错误
-assertUniqueActivityCodes(ACTIVITY_LIST)
-
-/** 按活动编码查找配置（未配置返回 undefined，由调用方兜底） */
-export function getActivityConfig(code: string, list: ActivityConfig[] = ACTIVITY_LIST): ActivityConfig | undefined {
-  return list.find(a => a.code === code)
+export function getActivityConfig(code: string): ActivityConfig | undefined {
+  const labels = ACTIVITY_CHAPTER_LABEL_OVERRIDES[code]
+  return labels ? { code, chapterLabels: labels } : undefined
 }

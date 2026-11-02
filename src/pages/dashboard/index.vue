@@ -301,15 +301,96 @@
         <section v-if="activeSection === 's6'" class="section">
           <div class="sub-section-title" style="display:flex;align-items:center;gap:12px">
             <span>活动统计</span>
-            <select
-              :value="store.selectedActivityCode"
-              class="activity-select"
-              @change="onActivityChange"
-            >
-              <option v-for="a in store.activities" :key="a.code" :value="a.code">{{ a.name }}</option>
-            </select>
           </div>
-          <div class="kpi-grid">
+          <!-- Issue #119：活动多选（自动发现 + 名称覆盖 + 全部汇总兜底） -->
+          <div class="activity-toolbar">
+            <div class="activity-select" :class="{ open: activityDropdownOpen }">
+              <button class="activity-select-btn" type="button" @click="activityDropdownOpen = !activityDropdownOpen">
+                <span class="activity-select-label">{{ activitySelectionLabel }}</span>
+                <span class="activity-select-arrow">{{ activityDropdownOpen ? '▴' : '▾' }}</span>
+              </button>
+            </div>
+            <div v-if="activityDropdownOpen" class="activity-select-backdrop" @click="activityDropdownOpen = false"></div>
+            <div v-if="activityDropdownOpen" class="activity-select-panel">
+              <label class="activity-option" :class="{ checked: isAllActivitySelected }">
+                <input
+                  type="checkbox"
+                  :checked="isAllActivitySelected"
+                  @change="toggleAllActivity"
+                />
+                <span class="activity-option-name">全部活动·汇总</span>
+              </label>
+              <label
+                v-for="a in store.activityList"
+                :key="a.code"
+                class="activity-option"
+                :class="{ checked: isActivityCodeSelected(a.code) }"
+              >
+                <input
+                  type="checkbox"
+                  :checked="isActivityCodeSelected(a.code)"
+                  @change="toggleActivityCode(a.code)"
+                />
+                <span class="activity-option-name">{{ a.name }}</span>
+                <span class="activity-option-date">{{ a.latest_snapshot_date || '暂无快照' }}</span>
+              </label>
+              <div v-if="!store.activityList.length" class="activity-option-empty">暂无活动快照数据</div>
+            </div>
+          </div>
+
+          <!-- 多选：顶部汇总行（跨活动求和口径） -->
+          <div v-if="store.isActivityMulti" class="all-summary-row">
+            <div class="all-summary-title">Σ 全部活动汇总（{{ store.selectedActivityItems.length }} 个活动求和）</div>
+            <div class="all-summary-metrics">
+              <span>参与 <b>{{ fmt(allActivitySummary?.totalParticipants) }}</b></span>
+              <span>初章完成 <b>{{ fmt(allActivitySummary?.chapter1Completed) }}</b>（{{ rateText(allActivitySummary?.chapter1Rate) }}）</span>
+              <span>进阶章完成 <b>{{ fmt(allActivitySummary?.chapter2Completed) }}</b>（{{ rateText(allActivitySummary?.chapter2Rate) }}）</span>
+              <span>终章完成 <b>{{ fmt(allActivitySummary?.chapter3Completed) }}</b>（{{ rateText(allActivitySummary?.chapter3Rate) }}）</span>
+            </div>
+            <div class="all-summary-note">⚠ {{ multiSumNote }}</div>
+          </div>
+
+          <!-- KPI：多选并列对比；单选与现状一致 -->
+          <template v-if="store.isActivityMulti">
+            <div v-for="item in store.selectedActivityItems" :key="item.code" class="activity-kpi-group">
+              <div class="sub-section-title">{{ item.name }}</div>
+              <div class="kpi-grid">
+                <KpiCard
+                  label="参与总人数"
+                  :value="fmt(item.summary?.totalParticipants)"
+                  trend="↑ 活动进行中"
+                  trend-dir="up"
+                  accent="blue"
+                  icon="🎯"
+                />
+                <KpiCard
+                  label="初章完成人数"
+                  :value="fmt(item.summary?.chapter1Completed)"
+                  :trend="`完成率 ${rateText(item.summary?.chapter1Rate)}`"
+                  trend-dir="flat"
+                  accent="green"
+                  icon="📖"
+                />
+                <KpiCard
+                  label="进阶章完成人数"
+                  :value="fmt(item.summary?.chapter2Completed)"
+                  :trend="`完成率 ${rateText(item.summary?.chapter2Rate)}`"
+                  trend-dir="flat"
+                  accent="orange"
+                  icon="📚"
+                />
+                <KpiCard
+                  label="终章完成人数"
+                  :value="fmt(item.summary?.chapter3Completed)"
+                  :trend="`完成率 ${rateText(item.summary?.chapter3Rate)}`"
+                  trend-dir="flat"
+                  accent="purple"
+                  icon="🏆"
+                />
+              </div>
+            </div>
+          </template>
+          <div v-else class="kpi-grid">
             <KpiCard
               label="参与总人数"
               :value="fmt(store.activitySummary?.totalParticipants)"
@@ -321,7 +402,7 @@
             <KpiCard
               label="初章完成人数"
               :value="fmt(store.activitySummary?.chapter1Completed)"
-              :trend="`完成率 ${store.activitySummary?.chapter1Rate != null ? Math.round(store.activitySummary.chapter1Rate) : '--'}%`"
+              :trend="`完成率 ${rateText(store.activitySummary?.chapter1Rate)}`"
               trend-dir="flat"
               accent="green"
               icon="📖"
@@ -329,7 +410,7 @@
             <KpiCard
               label="进阶章完成人数"
               :value="fmt(store.activitySummary?.chapter2Completed)"
-              :trend="`完成率 ${store.activitySummary?.chapter2Rate != null ? Math.round(store.activitySummary.chapter2Rate) : '--'}%`"
+              :trend="`完成率 ${rateText(store.activitySummary?.chapter2Rate)}`"
               trend-dir="flat"
               accent="orange"
               icon="📚"
@@ -337,13 +418,27 @@
             <KpiCard
               label="终章完成人数"
               :value="fmt(store.activitySummary?.chapter3Completed)"
-              :trend="`完成率 ${store.activitySummary?.chapter3Rate != null ? Math.round(store.activitySummary.chapter3Rate) : '--'}%`"
+              :trend="`完成率 ${rateText(store.activitySummary?.chapter3Rate)}`"
               trend-dir="flat"
               accent="purple"
               icon="🏆"
             />
           </div>
-          <div class="chart-row one">
+
+          <!-- 漏斗：多选并排；单选保持现状 -->
+          <template v-if="store.isActivityMulti">
+            <div class="chart-row two">
+              <ChartCard
+                v-for="item in store.selectedActivityItems"
+                :key="item.code"
+                :title="`活动转化漏斗 · ${item.name}`"
+                desc="参与 → 初章完成 → 进阶章完成 → 终章完成 各阶段转化率"
+                :option="activityItemFunnelOpt(item)"
+                :height="360"
+              />
+            </div>
+          </template>
+          <div v-else class="chart-row one">
             <div class="chart-card">
               <div class="chart-title">活动转化漏斗</div>
               <div class="chart-desc">参与 → 初章完成 → 进阶章完成 → 终章完成 各阶段转化率分析</div>
@@ -356,8 +451,17 @@
             </div>
           </div>
           <div class="chart-row two">
-            <ChartCard title="各阶段每日完成人数趋势" desc="近14天各章节每日完成人数趋势" :option="activityTrendOpt" />
-            <ChartCard title="各阶段转化率对比" desc="阶段间转化率与整体转化率分析" :option="activityConvOpt" />
+            <ChartCard title="各阶段每日完成人数趋势" desc="近14天各章节每日完成人数趋势（多活动多线对比）" :option="activityTrendOpt" />
+            <template v-if="store.isActivityMulti">
+              <ChartCard
+                v-for="item in store.selectedActivityItems"
+                :key="'conv-' + item.code"
+                title="各阶段转化率对比"
+                :desc="`阶段间转化率 · ${item.name}`"
+                :option="activityItemConvOpt(item)"
+              />
+            </template>
+            <ChartCard v-else title="各阶段转化率对比" desc="阶段间转化率与整体转化率分析" :option="activityConvOpt" />
           </div>
         </section>
       </div>
@@ -372,7 +476,8 @@ import KpiCard from './components/KpiCard.vue'
 import ChartCard from './components/ChartCard.vue'
 import AlertBanner from './components/AlertBanner.vue'
 import { useDashboardStore, fmtYuanWithSymbol } from '@/store/dashboard'
-import { getActivityConfig } from './data/activity-config'
+import { ALL_ACTIVITY_CODE, MULTI_SUM_NOTE, activityChapterLabels } from './data/activity-config'
+import type { ActivityStatsItem } from '@/api/activity'
 import {
   getEmptyChartOption,
   buildDauTrendOption, buildAgentDistributionOption, buildVersionDistributionOption, buildNewUserTrendOption,
@@ -380,7 +485,7 @@ import {
   buildCapabilityTrendOption, buildCapabilityPieOption, buildSkillRankOption,
   buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
   buildVoucherTrendOption, buildVoucherPieOption,
-  buildActivityFunnelOption, buildActivityTrendOption, buildActivityConvOption,
+  buildActivityFunnelOption, buildActivityTrendOption, buildActivityTrendMultiOption, buildActivityConvOption,
   buildStarDownloadTrendOption, buildContributorActivityOption,
 } from './data/charts'
 
@@ -504,6 +609,70 @@ watch(activityFunnelOpt, (newOpt) => {
   }
 })
 
+// ==================== 板块六：活动统计（Issue #119 多选对比） ====================
+
+const activityDropdownOpen = ref(false)
+const multiSumNote = MULTI_SUM_NOTE
+
+const isAllActivitySelected = computed(() =>
+  store.selectedActivityCodes.includes(ALL_ACTIVITY_CODE),
+)
+
+const isActivityCodeSelected = (code: string) =>
+  !isAllActivitySelected.value && store.selectedActivityCodes.includes(code)
+
+const activitySelectionLabel = computed(() => {
+  if (isAllActivitySelected.value) return '全部活动·汇总'
+  if (!store.selectedActivityCodes.length) return '未选择活动'
+  const first = store.selectedActivityCodes[0]
+  return store.selectedActivityCodes.length === 1
+    ? store.activityNameOf(first)
+    : `已选 ${store.selectedActivityCodes.length} 个活动`
+})
+
+/** 汇总行数据（多选时取 all 段） */
+const allActivitySummary = computed(() => store.activityStats?.all?.summary ?? null)
+
+function rateText(rate: number | undefined | null): string {
+  return rate != null ? `${Math.round(rate)}%` : '--'
+}
+
+/** 勾「全部活动·汇总」：清除其它码（兜底选项，取消时若将清空则忽略） */
+async function toggleAllActivity() {
+  if (isAllActivitySelected.value) return
+  await store.selectActivities([ALL_ACTIVITY_CODE])
+  activityDropdownOpen.value = true
+}
+
+/** 勾/取消单个活动；从「全部」切换到具体活动；结果为空则忽略 */
+async function toggleActivityCode(code: string) {
+  let next: string[]
+  if (isAllActivitySelected.value) {
+    next = [code]
+  } else {
+    next = store.selectedActivityCodes.includes(code)
+      ? store.selectedActivityCodes.filter(c => c !== code)
+      : [...store.selectedActivityCodes, code]
+  }
+  if (!next.length) return
+  await store.selectActivities(next)
+  activityDropdownOpen.value = true
+}
+
+/** 单活动漏斗图 option（多选并排用） */
+function activityItemFunnelOpt(item: ActivityStatsItem) {
+  return item.summary?.funnel?.length
+    ? buildActivityFunnelOption(item.summary.funnel)
+    : getEmptyChartOption()
+}
+
+/** 单活动转化率图 option（多选并列用） */
+function activityItemConvOpt(item: ActivityStatsItem) {
+  return item.conversion?.stages?.length
+    ? buildActivityConvOption(item.conversion.stages)
+    : getEmptyChartOption()
+}
+
 const handleResize = () => funnelChart?.resize()
 
 onMounted(async () => {
@@ -599,8 +768,20 @@ const voucherPieOpt = computed(() =>
     : getEmptyChartOption()
 )
 
-const activityTrendOpt = computed(() =>
-  store.activityTrend?.chapter1?.length
+const activityTrendOpt = computed(() => {
+  if (store.isActivityMulti) {
+    const items = store.selectedActivityItems
+      .filter(i => i.trend?.chapter1?.length)
+    return items.length
+      ? buildActivityTrendMultiOption(items.map(i => ({
+          name: i.name,
+          chapter1: i.trend!.chapter1,
+          chapter2: i.trend!.chapter2,
+          chapter3: i.trend!.chapter3,
+        })))
+      : getEmptyChartOption()
+  }
+  return store.activityTrend?.chapter1?.length
     ? buildActivityTrendOption(
         store.activityTrend.chapter1,
         store.activityTrend.chapter2,
@@ -608,24 +789,18 @@ const activityTrendOpt = computed(() =>
         selectedActivityChapterLabels.value,
       )
     : getEmptyChartOption()
-)
+})
 const activityConvOpt = computed(() =>
   store.activityConversion?.stages?.length
     ? buildActivityConvOption(store.activityConversion.stages)
     : getEmptyChartOption()
 )
 
-/** 当前活动的章节标签（活动清单配置化，新增活动零后端发版） */
+/** 当前活动的章节标签（覆盖表优先，新增活动零前端改动） */
 const selectedActivityChapterLabels = computed<[string, string, string]>(() => {
-  const conf = getActivityConfig(store.selectedActivityCode)
-  return conf?.chapterLabels ?? ['初章完成', '进阶章完成', '终章完成']
+  const selected = store.selectedActivityCodes.find(c => c !== ALL_ACTIVITY_CODE)
+  return activityChapterLabels(selected ?? '')
 })
-
-/** 切换活动：配置驱动重新加载该活动统计 */
-function onActivityChange(e: Event) {
-  const code = (e.target as HTMLSelectElement).value
-  store.setActivityCode(code)
-}
 </script>
 
 <style lang="scss">
@@ -640,15 +815,135 @@ function onActivityChange(e: Event) {
   border-left: 3px solid #5b8def;
   margin-bottom: 16px;
 }
+// ==================== Section 6: 活动多选与汇总（Issue #119） ====================
+.activity-toolbar {
+  position: relative;
+  margin-bottom: 16px;
+}
+
 .activity-select {
-  font-size: 13px;
-  color: #374151;
+  display: inline-block;
+}
+
+.activity-select-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 260px;
+  padding: 8px 14px;
+  background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 6px;
-  padding: 4px 8px;
-  background: #fff;
-  outline: none;
   cursor: pointer;
+  font-size: 13px;
+  color: #1f2937;
+
+  &:hover { border-color: #5b8def; }
+}
+
+.activity-select-label {
+  flex: 1;
+  text-align: left;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-select-arrow { color: #6b7280; font-size: 11px; }
+
+.activity-select-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 98;
+}
+
+.activity-select-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: 6px;
+  min-width: 340px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  z-index: 99;
+  padding: 6px;
+}
+
+.activity-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #374151;
+
+  &:hover { background: #f5f7fa; }
+  &.checked { background: rgba(91, 141, 239, 0.08); color: #1f2937; font-weight: 500; }
+
+  input { accent-color: #5b8def; cursor: pointer; }
+}
+
+.activity-option-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.activity-option-date {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.activity-option-empty {
+  padding: 16px 10px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.all-summary-row {
+  background: linear-gradient(90deg, rgba(91, 141, 239, 0.08), rgba(114, 46, 209, 0.05));
+  border: 1px solid rgba(91, 141, 239, 0.25);
+  border-radius: 10px;
+  padding: 14px 18px;
+  margin-bottom: 24px;
+}
+
+.all-summary-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.all-summary-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  font-size: 13px;
+  color: #4b5563;
+
+  b { color: #1f2937; font-size: 15px; }
+}
+
+.all-summary-note {
+  margin-top: 8px;
+  font-size: 11px;
+  color: #92400e;
+}
+
+.activity-kpi-group {
+  margin-bottom: 8px;
+
+  .sub-section-title { margin-bottom: 12px; }
+  .kpi-grid { margin-bottom: 16px; }
 }
 
 // KPI badge (inside KpiCard slot)
