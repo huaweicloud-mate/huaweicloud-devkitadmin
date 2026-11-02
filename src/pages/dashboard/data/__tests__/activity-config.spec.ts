@@ -4,10 +4,7 @@ import {
   ALL_ACTIVITY_LABEL,
   MULTI_SUM_NOTE,
   activityDisplayName,
-  activityChapterLabels,
-  getActivityConfig,
   ACTIVITY_NAME_OVERRIDES,
-  ACTIVITY_CHAPTER_LABEL_OVERRIDES,
 } from '../activity-config'
 
 describe('activity-config（Issue #119 覆盖语义）', () => {
@@ -30,16 +27,5 @@ describe('activity-config（Issue #119 覆盖语义）', () => {
     expect(activityDisplayName('a-1', '后端名')).toBe('后端名')
     expect(activityDisplayName('a-1', '')).toBe('a-1')
     expect(activityDisplayName('a-1', null)).toBe('a-1')
-  })
-
-  it('activityChapterLabels：覆盖表优先，默认通用标签', () => {
-    ACTIVITY_CHAPTER_LABEL_OVERRIDES['a-1'] = ['一', '二', '三']
-    expect(activityChapterLabels('a-1')).toEqual(['一', '二', '三'])
-    delete ACTIVITY_CHAPTER_LABEL_OVERRIDES['a-1']
-    expect(activityChapterLabels('unknown')).toEqual(['初章完成', '进阶章完成', '终章完成'])
-  })
-
-  it('getActivityConfig returns undefined for unknown code', () => {
-    expect(getActivityConfig('no-such-activity')).toBeUndefined()
   })
 })

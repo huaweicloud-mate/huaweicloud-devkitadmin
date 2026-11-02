@@ -18,28 +18,7 @@ export const ACTIVITY_NAME_OVERRIDES: Record<string, string> = {
 /** KPI 汇总行口径标注（跨活动求和，同人可能重复计数） */
 export const MULTI_SUM_NOTE = '跨活动求和口径：同一用户参与多个活动会被重复计数，比率按汇总基数重算'
 
-/** 章节标签覆盖表（code → 三章节展示标签），未命中用默认标签 */
-export const ACTIVITY_CHAPTER_LABEL_OVERRIDES: Record<string, [string, string, string]> = {
-  // 'open-capability-2026-1024': ['初章完成', '进阶章完成', '终章完成'],
-}
-
 /** 取活动展示名：覆盖表优先，其次后端 name，兜底 code */
 export function activityDisplayName(code: string, backendName?: string | null): string {
   return ACTIVITY_NAME_OVERRIDES[code] ?? (backendName && backendName.trim() ? backendName : code)
-}
-
-/** 取活动章节标签（覆盖优先，默认通用标签） */
-export function activityChapterLabels(code: string): [string, string, string] {
-  return ACTIVITY_CHAPTER_LABEL_OVERRIDES[code] ?? ['初章完成', '进阶章完成', '终章完成']
-}
-
-/** 兼容 #39 语义的配置查找：现仅返回章节标签覆盖（活动清单已由后端发现） */
-export interface ActivityConfig {
-  code: string
-  chapterLabels: [string, string, string]
-}
-
-export function getActivityConfig(code: string): ActivityConfig | undefined {
-  const labels = ACTIVITY_CHAPTER_LABEL_OVERRIDES[code]
-  return labels ? { code, chapterLabels: labels } : undefined
 }

@@ -13,21 +13,23 @@ import { ALL_ACTIVITY_CODE } from '@/pages/dashboard/data/activity-config'
 const mockedGetActivityList = vi.mocked(activityApi.getActivityList)
 const mockedGetActivityStats = vi.mocked(activityApi.getActivityStats)
 
+function stage(key: string, label: string, value: number, total: number) {
+  return { key, label, value, rate: total ? Math.round((value / total) * 1000) / 10 : 0 }
+}
+
 function item(code: string, total: number, c1: number, c2: number, c3: number) {
   return {
     code,
     name: `活动-${code}`,
     summary: {
       totalParticipants: total,
-      chapter1Completed: c1,
-      chapter2Completed: c2,
-      chapter3Completed: c3,
-      chapter1Rate: total ? Math.round((c1 / total) * 1000) / 10 : 0,
-      chapter2Rate: total ? Math.round((c2 / total) * 1000) / 10 : 0,
-      chapter3Rate: total ? Math.round((c3 / total) * 1000) / 10 : 0,
-      funnel: [],
+      stages: [
+        stage('beginner', '初章', c1, total),
+        stage('intermediate', '进阶章', c2, total),
+        stage('advanced', '终章', c3, total),
+      ],
     },
-    trend: { chapter1: [], chapter2: [], chapter3: [] },
+    trend: { stages: [] },
     conversion: { stages: [] },
   }
 }
@@ -36,16 +38,14 @@ function multiResponse(a = item('a-1', 100, 60, 30, 10), b = item('a-2', 50, 20,
   return {
     all: {
       summary: {
-        totalParticipants: a.summary!.totalParticipants + b.summary!.totalParticipants,
-        chapter1Completed: a.summary!.chapter1Completed + b.summary!.chapter1Completed,
-        chapter2Completed: a.summary!.chapter2Completed + b.summary!.chapter2Completed,
-        chapter3Completed: a.summary!.chapter3Completed + b.summary!.chapter3Completed,
-        chapter1Rate: 53.3,
-        chapter2Rate: 26.7,
-        chapter3Rate: 10,
-        funnel: [],
+        totalParticipants: 150,
+        stages: [
+          { key: 'beginner', label: '初章', value: 80, rate: 53.3 },
+          { key: 'intermediate', label: '进阶章', value: 40, rate: 26.7 },
+          { key: 'advanced', label: '终章', value: 15, rate: 10 },
+        ],
       },
-      trend: { chapter1: [], chapter2: [], chapter3: [] },
+      trend: { stages: [] },
       conversion: { stages: [] },
     },
     items: [a, b],
@@ -119,7 +119,7 @@ describe('活动统计多选对比 store（Issue #119）', () => {
     expect(store.selectedActivityItems).toHaveLength(2)
     // 汇总 = 100 + 50
     expect(store.activitySummary?.totalParticipants).toBe(150)
-    expect(store.activitySummary?.chapter1Completed).toBe(80)
+    expect(store.activitySummary?.stages[0].value).toBe(80)
   })
 
   it('单选时 activitySummary 指向该活动数据（与现状一致）', async () => {

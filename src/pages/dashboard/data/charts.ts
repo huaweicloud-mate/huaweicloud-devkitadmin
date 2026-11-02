@@ -8,6 +8,9 @@ const axisStyle = {
 
 const colorPalette = ['#5B8DEF', '#52C41A', '#FAAD14', '#722ED1', '#13C2C2']
 
+/** 活动阶段配色（按阶段序号循环） */
+const ACTIVITY_STAGE_COLORS = ['#52C41A', '#FAAD14', '#722ED1', '#13C2C2', '#FF4D4F', '#5B8DEF']
+
 /** 数据为空时的占位图 */
 export function getEmptyChartOption(): EChartsOption {
   return {
@@ -441,62 +444,57 @@ export function buildActivityFunnelOption(
   }
 }
 
-/** 活动完成趋势（接收 API 三章节数据；章节名来自活动配置，默认沿用通用标签） */
+/** 活动完成趋势（接收动态阶段 stages：每阶段一条线，配色按阶段序号循环） */
 export function buildActivityTrendOption(
-  chapter1: Array<{ date: string; value: number }>,
-  chapter2: Array<{ date: string; value: number }>,
-  chapter3: Array<{ date: string; value: number }>,
-  labels: [string, string, string] = ['初章完成', '进阶章完成', '终章完成'],
+  stages: Array<{ key: string; label: string; points: Array<{ date: string; value: number }> }>,
 ): EChartsOption {
-  const dates = chapter1.map(p => p.date)
+  const dateSet: Set<string> = new Set()
+  for (const s of stages) for (const p of s.points) dateSet.add(p.date)
+  const dates = [...dateSet].sort()
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: [...labels], right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: stages.map(s => s.label), right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 45, right: 20, top: 35, bottom: 30 },
     xAxis: { type: 'category', data: dates, ...axisStyle },
     yAxis: { type: 'value', ...axisStyle },
-    series: [
-      { name: labels[0], type: 'line', smooth: true, data: chapter1.map(p => p.value), itemStyle: { color: '#52C41A' } },
-      { name: labels[1], type: 'line', smooth: true, data: chapter2.map(p => p.value), itemStyle: { color: '#FAAD14' } },
-      { name: labels[2], type: 'line', smooth: true, data: chapter3.map(p => p.value), itemStyle: { color: '#722ED1' } },
-    ],
+    series: stages.map((s, i) => {
+      const byDate = new Map(s.points.map(p => [p.date, p.value]))
+      return {
+        name: s.label,
+        type: 'line',
+        smooth: true,
+        data: dates.map(d => byDate.get(d) ?? 0),
+        itemStyle: { color: ACTIVITY_STAGE_COLORS[i % ACTIVITY_STAGE_COLORS.length] },
+      }
+    }),
   }
 }
 
 /**
- * Issue #119 多活动对比趋势（多线）：每个活动 × 三个章节各一条线，
- * 章节固定配色（绿/橙/紫），活动间以线型区分（实线/虚线/点线循环）。
+ * Issue #119 多活动对比趋势（多线）：每个活动 × 每个阶段各一条线，
+ * 阶段配色固定（按阶段序号），活动间以线型区分（实线/虚线/点线循环）。
  */
 export function buildActivityTrendMultiOption(
   activities: Array<{
     name: string
-    chapter1: Array<{ date: string; value: number }>
-    chapter2: Array<{ date: string; value: number }>
-    chapter3: Array<{ date: string; value: number }>
+    stages: Array<{ key: string; label: string; points: Array<{ date: string; value: number }> }>
   }>,
 ): EChartsOption {
-  const dates = activities.flatMap(a => a.chapter1.map(p => p.date))
-    .filter((d, i, arr) => arr.indexOf(d) === i)
-    .sort()
-  const chapterMeta = [
-    { key: 'chapter1', label: '初章完成', color: '#52C41A' },
-    { key: 'chapter2', label: '进阶章完成', color: '#FAAD14' },
-    { key: 'chapter3', label: '终章完成', color: '#722ED1' },
-  ] as const
+  const dateSet: Set<string> = new Set()
+  for (const a of activities) for (const s of a.stages) for (const p of s.points) dateSet.add(p.date)
+  const dates = [...dateSet].sort()
   const lineTypes = ['solid', 'dashed', 'dotted'] as const
   const series: any[] = []
   for (const [ai, act] of activities.entries()) {
-    for (const ch of chapterMeta) {
-      const points = (act as any)[ch.key] as Array<{ date: string; value: number }>
-      if (!points?.length) continue
-      const byDate = new Map(points.map(p => [p.date, p.value]))
+    for (const [si, st] of act.stages.entries()) {
+      const byDate = new Map(st.points.map(p => [p.date, p.value]))
       series.push({
-        name: `${act.name}·${ch.label}`,
+        name: `${act.name}·${st.label}`,
         type: 'line',
         smooth: true,
         data: dates.map(d => byDate.get(d) ?? 0),
         lineStyle: { type: lineTypes[ai % lineTypes.length] },
-        itemStyle: { color: ch.color },
+        itemStyle: { color: ACTIVITY_STAGE_COLORS[si % ACTIVITY_STAGE_COLORS.length] },
       })
     }
   }
