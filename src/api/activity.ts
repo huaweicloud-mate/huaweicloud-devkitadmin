@@ -63,6 +63,17 @@ export interface ActivityStatsMulti {
   items: ActivityStatsItem[]
 }
 
+/** /activity/codes 活动登记表项（配置驱动，含无数据活动） */
+export interface ActivityCodeItem {
+  code: string
+  name: string
+}
+
+/** 活动登记表：配置里登记的所有活动（含无快照数据的），最新在前 */
+export function getActivityCodes(): Promise<ActivityCodeItem[]> {
+  return http.get(`${BASE}/activity/codes`) as Promise<ActivityCodeItem[]>
+}
+
 /** 活动列表：distinct activity_code 按 MAX(snapshot_date) 降序（后端自动发现） */
 export function getActivityList() {
   return http.get(`${BASE}/activity/list`)

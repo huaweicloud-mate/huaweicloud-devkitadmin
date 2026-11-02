@@ -519,13 +519,33 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   /** 活动列表：接口发现 + activity-config 覆盖；默认勾选第一个（最新有数据活动） */
   async function loadActivityList() {
-    const raw: any = await activityApi.getActivityList()
-    const list: ActivityListItem[] = raw ?? []
-    activityList.value = list.map(item => ({
-      code: item.code,
-      name: activityDisplayName(item.code, item.name),
-      latest_snapshot_date: item.latest_snapshot_date ?? null,
-    }))
+    // 配置登记表（含无数据活动）+ 快照自动发现（有数据活动，取真实名/最近快照时间）
+    const [codesRaw, listRaw] = await Promise.all([
+      activityApi.getActivityCodes().catch(() => []),
+      activityApi.getActivityList().catch(() => []),
+    ])
+    const snaps = (listRaw ?? []) as Array<{ code: string; name: string; latest_snapshot_date: string | null }>
+    const snapMap = new Map(snaps.map(s => [s.code, s] as const))
+    const merged: ActivityListItem[] = []
+    // 有数据的活动在前（沿用后端 MAX(snapshot_date) 降序）
+    for (const s of snaps) {
+      merged.push({
+        code: s.code,
+        name: activityDisplayName(s.code, s.name),
+        latest_snapshot_date: s.latest_snapshot_date ?? null,
+      })
+    }
+    // 配置里有、快照里没有的（无数据活动仍显示名字，标注「暂无快照」）
+    for (const c of (codesRaw ?? [])) {
+      if (!snapMap.has(c.code)) {
+        merged.push({
+          code: c.code,
+          name: activityDisplayName(c.code, c.name),
+          latest_snapshot_date: null,
+        })
+      }
+    }
+    activityList.value = merged
   }
 
   /** 默认勾选：列表第一个；空列表/无最近快照时间兜底勾「全部活动·汇总」 */
