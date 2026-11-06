@@ -156,3 +156,25 @@ export function getOpenSourceReleases() {
 export function getOpenSourceContributors() {
   return http.get(`${BASE}/opensource/contributors`)
 }
+
+// ==================== 服务健康（#120） ====================
+
+/** 入站 API 健康概览（调用量/错误率/5xx 数，今日/昨日） */
+export function getHealthSummary() {
+  return http.get(`${BASE}/health/summary`)
+}
+
+/** 错误码 Top + 5xx path Top（带最近 traceId/时间） */
+export function getHealthErrorTop() {
+  return http.get(`${BASE}/health/error-top`)
+}
+
+/** 慢接口 Top（p90/95/99 分 path/host） */
+export function getHealthSlowTop() {
+  return http.get(`${BASE}/health/slow-top`)
+}
+
+/** 近 7 天错误率/调用量趋势 */
+export function getHealthTrend() {
+  return http.get(`${BASE}/health/trend`)
+}
