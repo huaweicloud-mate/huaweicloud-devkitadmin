@@ -751,6 +751,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
         loadSandboxIdle(),
         loadSandboxErrorStats(),
         loadSandboxCostBreakdown(),
+        loadHealthSummary(),
+        loadHealthErrorTop(),
+        loadHealthSlowTop(),
+        loadHealthTrend(),
         loadVoucherSummary(),
         loadVoucherTrend(),
         loadVoucherDistribution(),
@@ -772,6 +776,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
     dauTrend,
     agentDistribution,
     versionDistribution,
+    healthSummary,
+    healthErrorTop,
+    healthSlowTop,
+    healthTrend,
     newUserTrend,
     downloadChannelDist,
     downloadTrend,
@@ -847,3 +855,128 @@ export const useDashboardStore = defineStore('dashboard', () => {
   }
 })
 
+
+// ==================== 服务健康（#120） ====================
+
+export interface HealthSummaryDay {
+  date: string
+  totalCalls: number
+  errorCalls: number
+  errorRatePct: number
+  serverErrorCalls: number
+  slowCalls: number
+}
+
+export interface HealthSummaryUpstream {
+  host: string
+  totalCalls: number
+  failedCalls: number
+  failedRatePct: number
+  avgDurationMs: number
+}
+
+export interface HealthSummary {
+  yesterday: HealthSummaryDay
+  today: HealthSummaryDay
+  upstream: HealthSummaryUpstream[]
+}
+
+export interface HealthErrorItem {
+  errorCode: string
+  count: number
+  recentTraceId: string
+  recentTime: string
+}
+
+export interface HealthSlowItem {
+  path: string
+  host: string
+  p90: number
+  p95: number
+  p99: number
+}
+
+export interface HealthTrendPoint {
+  date: string
+  totalCalls: number
+  errorRate: number
+}
+
+const healthSummary = ref<HealthSummary | null>(null)
+const healthErrorTop = ref<HealthErrorItem[]>([])
+const healthSlowTop = ref<HealthSlowItem[]>([])
+const healthTrend = ref<HealthTrendPoint[]>([])
+
+async function loadHealthSummary() {
+  try {
+    const raw = await api.getHealthSummary() as any
+    const d = raw?.data ?? raw
+    // 后端返回 {yesterday, today, upstream}，校验结构后赋值
+    if (d && d.yesterday && d.today) {
+      healthSummary.value = d
+    } else {
+      healthSummary.value = null
+    }
+  } catch { healthSummary.value = null }
+}
+
+async function loadHealthErrorTop() {
+  try {
+    const raw = await api.getHealthErrorTop() as any
+    const d = raw?.data ?? raw
+    // 后端返回 {errorCodes: [{errorCode, count, latestTraceId, latestTime}], serverErrorPaths: [...], upstreamFailures: [...]}
+    // 前端期望 Array<{errorCode, count}>
+    if (d?.errorCodes) {
+      healthErrorTop.value = d.errorCodes
+    } else if (d?.upstreamFailures) {
+      healthErrorTop.value = d.upstreamFailures.map((u: any) => ({
+        errorCode: u.errorCode,
+        count: u.count
+      }))
+    } else {
+      healthErrorTop.value = []
+    }
+  } catch { healthErrorTop.value = [] }
+}
+
+async function loadHealthSlowTop() {
+  try {
+    const raw = await api.getHealthSlowTop() as any
+    const d = raw?.data ?? raw
+    // 后端返回 {inbound: [{path, samples, p90Ms, p95Ms, p99Ms, maxMs}], upstream: [...]}
+    // 前端期望 Array<{path, host, p95}>
+    if (d?.inbound) {
+      healthSlowTop.value = d.inbound.map((p: any) => ({
+        path: p.path,
+        host: 'inbound',
+        p95: p.p95Ms
+      }))
+    } else if (d?.upstream) {
+      healthSlowTop.value = d.upstream.map((p: any) => ({
+        path: p.host,
+        host: p.host,
+        p95: p.p95Ms
+      }))
+    } else {
+      healthSlowTop.value = []
+    }
+  } catch { healthSlowTop.value = [] }
+}
+
+async function loadHealthTrend() {
+  try {
+    const raw = await api.getHealthTrend() as any
+    const d = raw?.data ?? raw
+    // 后端返回 {inbound: [{date, calls, errorCalls, errorRatePct}], upstream: [...]}
+    // 前端期望 Array<{date, totalCalls, errorRate}>
+    if (d?.inbound) {
+      healthTrend.value = d.inbound.map((p: any) => ({
+        date: p.date,
+        totalCalls: p.calls,
+        errorRate: p.errorRatePct
+      }))
+    } else {
+      healthTrend.value = []
+    }
+  } catch { healthTrend.value = [] }
+}

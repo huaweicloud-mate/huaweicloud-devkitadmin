@@ -757,3 +757,72 @@ export function buildContributorActivityOption(
     ],
   }
 }
+
+// ==================== 服务健康（#120） ====================
+
+/** 健康趋势图（近 7 天调用量 + 错误率双 Y 轴） */
+export function buildHealthTrendOption(data: Array<{ date: string; totalCalls: number; errorRate: number }>): EChartsOption {
+  if (!data.length) return getEmptyChartOption()
+  return {
+    tooltip: { trigger: 'axis' },
+    legend: { data: ['调用量', '错误率(%)'], bottom: 0 },
+    grid: { top: 40, left: 60, right: 60, bottom: 40 },
+    xAxis: { type: 'category', data: data.map(d => d.date.slice(5)), boundaryGap: false },
+    yAxis: [
+      { type: 'value', name: '调用量' },
+      { type: 'value', name: '错误率(%)', max: 100 },
+    ],
+    series: [
+      {
+        name: '调用量', type: 'line', smooth: true, yAxisIndex: 0,
+        data: data.map(d => d.totalCalls), itemStyle: { color: '#5B8EFF' },
+      },
+      {
+        name: '错误率(%)', type: 'line', smooth: true, yAxisIndex: 1,
+        data: data.map(d => d.errorRate), itemStyle: { color: '#FF4D4F' },
+      },
+    ],
+  }
+}
+
+/** 错误码 Top10 横向柱状图 */
+export function buildHealthErrorTopOption(data: Array<{ errorCode: string; count: number }>): EChartsOption {
+  if (!data.length) return getEmptyChartOption()
+  const sorted = [...data].sort((a, b) => b.count - a.count).slice(0, 10)
+  return {
+    tooltip: { trigger: 'axis' },
+    grid: { top: 10, left: 180, right: 40, bottom: 30 },
+    xAxis: { type: 'value' },
+    yAxis: { type: 'category', data: sorted.map(d => d.errorCode).reverse(), axisLabel: { fontSize: 11 } },
+    series: [{
+      type: 'bar',
+      data: sorted.map(d => d.count).reverse(),
+      itemStyle: { color: '#FF4D4F', borderRadius: [0, 4, 4, 0] },
+      label: { show: true, position: 'right', fontSize: 11 },
+    }],
+  }
+}
+
+/** 慢接口 Top10 横向柱状图（按 p95 耗时） */
+export function buildHealthSlowTopOption(data: Array<{ path: string; host: string; p95: number }>): EChartsOption {
+  if (!data.length) return getEmptyChartOption()
+  const sorted = [...data].sort((a, b) => b.p95 - a.p95).slice(0, 10)
+  return {
+    tooltip: {
+      trigger: 'axis',
+      formatter: (params: any) => {
+        const d = sorted[params[0].dataIndex]
+        return `${d?.path || ''}<br/>host: ${d?.host || ''}<br/>p95: ${d?.p95 || 0}ms`
+      },
+    },
+    grid: { top: 10, left: 220, right: 60, bottom: 30 },
+    xAxis: { type: 'value', name: 'ms' },
+    yAxis: { type: 'category', data: sorted.map(d => d.path.slice(0, 30)).reverse(), axisLabel: { fontSize: 10 } },
+    series: [{
+      type: 'bar',
+      data: sorted.map(d => d.p95).reverse(),
+      itemStyle: { color: '#FAAD14', borderRadius: [0, 4, 4, 0] },
+      label: { show: true, position: 'right', fontSize: 10, formatter: '{c}ms' },
+    }],
+  }
+}

@@ -1,3 +1,4 @@
+import { describe, it, expect } from 'vitest'
 
 import { buildSandboxIdleOption } from '../charts'
 
@@ -22,7 +23,7 @@ describe('buildSandboxIdleOption - bucket colors by order', () => {
     expect(colors[5]).toBe('#FF4D4F') // 14d_30d → red
   })
   it('handles missing order gracefully (defaults to red)', () => {
-    const buckets = [{ label: 'unknown', order: undefined, count: 1 }]
+    const buckets = [{ label: 'unknown', order: undefined as unknown as number, count: 1 }]
     const opt = buildSandboxIdleOption(buckets)
     const colors = (opt.series as any[])[0].data.map((d: any) => d.itemStyle.color)
     expect(colors[0]).toBe('#FF4D4F') // missing order → red (safe default)

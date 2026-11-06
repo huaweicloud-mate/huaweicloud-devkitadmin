@@ -153,6 +153,24 @@
           </div>
         </section>
 
+                <!-- ======== Section 2.5: 服务健康（#120） ======== -->
+        <section v-if="activeSection === 's2h'" class="section">
+          <div class="sub-section-title">服务健康</div>
+          <div class="kpi-grid">
+            <KpiCard label="昨日总调用" :value="fmt(store.healthSummary?.yesterday?.totalCalls)" trend="截至昨日" trend-dir="up" accent="blue" icon="📡" />
+            <KpiCard label="昨日错误率" :value="store.healthSummary?.yesterday?.errorRatePct != null ? store.healthSummary.yesterday.errorRatePct.toFixed(2) + '%' : '--'" trend="含 4xx + 5xx" trend-dir="flat" accent="orange" icon="⚠️" />
+            <KpiCard label="昨日 5xx" :value="fmt(store.healthSummary?.yesterday?.serverErrorCalls)" trend="服务端错误" trend-dir="down" accent="red" icon="🔴" />
+            <KpiCard label="今日调用" :value="fmt(store.healthSummary?.today?.totalCalls)" trend="截至当前" trend-dir="up" accent="green" icon="📈" />
+          </div>
+          <div class="chart-row two">
+            <ChartCard title="近 7 天调用量与错误率趋势" desc="入站 API 调用量（蓝）与错误率%（红）双轴趋势" :option="healthTrendOpt" :height="300" />
+            <ChartCard title="错误码 Top10" desc="含 4xx/5xx/业务错误码，按出现次数排行" :option="healthErrorTopOpt" :height="300" />
+          </div>
+          <div class="chart-row one">
+            <ChartCard title="慢接口 Top10" desc="按 p95 耗时降序排列（毫秒）" :option="healthSlowTopOpt" :height="320" />
+          </div>
+        </section>
+
         <!-- ======== Section 3: 插件开源运营 ======== -->
         <section v-if="activeSection === 's3'" class="section">
           <div class="kpi-grid">
@@ -495,6 +513,7 @@ import {
   buildCapabilityTrendOption, buildCapabilityPieOption, buildSkillRankOption,
   buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
   buildSandboxRevisitIntervalOption, buildSandboxIdleOption,
+  buildHealthTrendOption, buildHealthErrorTopOption, buildHealthSlowTopOption,
   buildSandboxErrorTrendOption, buildSandboxErrorCodeOption, buildSandboxCostOption,
   buildVoucherTrendOption, buildVoucherPieOption,
   buildActivityFunnelOption, buildActivityTrendOption, buildActivityTrendMultiOption, buildActivityConvOption,
@@ -523,6 +542,7 @@ watch(activeSection, () => {
 const navItems = [
   { key: 's1', icon: '👥', label: '业务核心指标', badge: '' },
   { key: 's2', icon: '🛠️', label: '开放能力', badge: '' },
+  { key: 's2h', icon: '🩺', label: '服务健康', badge: '' },
   { key: 's3', icon: '⭐', label: '插件开源运营', badge: '' },
   { key: 's4', icon: '📦', label: '沙箱资源信息', badge: '' },
   { key: 's5', icon: '💰', label: '代金券资源', badge: '' },
@@ -790,6 +810,23 @@ const avgDurationTrendDir = computed(() => {
   if (delta == null || store.sandboxSummary?.avgDurationSec == null) return 'flat'
   return delta >= 0 ? 'up' : 'down'
 })
+
+// ==================== 服务健康（#120） ====================
+const healthTrendOpt = computed(() =>
+  store.healthTrend?.length
+    ? buildHealthTrendOption(store.healthTrend)
+    : getEmptyChartOption()
+)
+const healthErrorTopOpt = computed(() =>
+  store.healthErrorTop?.length
+    ? buildHealthErrorTopOption(store.healthErrorTop)
+    : getEmptyChartOption()
+)
+const healthSlowTopOpt = computed(() =>
+  store.healthSlowTop?.length
+    ? buildHealthSlowTopOption(store.healthSlowTop)
+    : getEmptyChartOption()
+)
 
 const sandboxRevisitOpt = computed(() =>
   store.sandboxRevisitInterval?.buckets?.length
