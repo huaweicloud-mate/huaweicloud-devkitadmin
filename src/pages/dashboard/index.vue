@@ -479,7 +479,8 @@
             </div>
           </div>
           <div class="chart-row two">
-            <ChartCard title="各阶段每日完成人数趋势" desc="近14天各章节每日完成人数趋势（多活动多线对比）" :option="activityTrendOpt" />
+            <ChartCard title="每日提交趋势" desc="各阶段每日提交人数（提交即记录，含未通过）" :option="activitySubmittedTrendOpt" />
+            <ChartCard title="每日审批通过趋势" desc="各阶段每日审批通过人数（已确认完成）" :option="activityApprovedTrendOpt" />
             <template v-if="store.isActivityMulti">
               <ChartCard
                 v-for="item in store.selectedActivityItems"
@@ -516,7 +517,8 @@ import {
   buildHealthTrendOption, buildHealthErrorTopOption, buildHealthSlowTopOption,
   buildSandboxErrorTrendOption, buildSandboxErrorCodeOption, buildSandboxCostOption,
   buildVoucherTrendOption, buildVoucherPieOption,
-  buildActivityFunnelOption, buildActivityTrendOption, buildActivityTrendMultiOption, buildActivityConvOption,
+  buildActivityFunnelOption, buildActivityTrendApprovedOption, buildActivityTrendSubmittedOption,
+  buildActivityTrendMultiApprovedOption, buildActivityTrendMultiSubmittedOption, buildActivityConvOption,
   buildStarDownloadTrendOption, buildContributorActivityOption,
 } from './data/charts'
 
@@ -888,20 +890,35 @@ const voucherPieOpt = computed(() =>
     : getEmptyChartOption()
 )
 
-const activityTrendOpt = computed(() => {
+const activitySubmittedTrendOpt = computed(() => {
+  const stages = store.isActivityMulti ? null : store.activityTrend?.submittedStages
+  if (store.isActivityMulti) {
+    const items = store.selectedActivityItems
+      .filter(i => i.trend?.submittedStages?.length)
+    return items.length
+      ? buildActivityTrendMultiSubmittedOption(items.map(i => ({
+          name: i.name,
+          stages: i.trend!.submittedStages!,
+        })))
+      : getEmptyChartOption()
+  }
+  return stages?.length
+    ? buildActivityTrendSubmittedOption(stages)
+    : getEmptyChartOption()
+})
+const activityApprovedTrendOpt = computed(() => {
   if (store.isActivityMulti) {
     const items = store.selectedActivityItems
       .filter(i => i.trend?.stages?.length)
     return items.length
-      ? buildActivityTrendMultiOption(items.map(i => ({
+      ? buildActivityTrendMultiApprovedOption(items.map(i => ({
           name: i.name,
           stages: i.trend!.stages,
-          submittedStages: i.trend!.submittedStages ?? [],
         })))
       : getEmptyChartOption()
   }
   return store.activityTrend?.stages?.length
-    ? buildActivityTrendOption(store.activityTrend.stages, store.activityTrend.submittedStages)
+    ? buildActivityTrendApprovedOption(store.activityTrend.stages)
     : getEmptyChartOption()
 })
 const activityConvOpt = computed(() =>
