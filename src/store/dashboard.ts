@@ -330,6 +330,7 @@ export interface ActivityStageTrend {
 
 export interface ActivityTrend {
   stages: ActivityStageTrend[]
+  submittedStages?: ActivityStageTrend[]
 }
 
 export interface ActivityConvItem {

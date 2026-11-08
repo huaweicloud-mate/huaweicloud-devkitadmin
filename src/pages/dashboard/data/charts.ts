@@ -614,58 +614,93 @@ export function buildActivityFunnelOption(
   }
 }
 
-/** 活动完成趋势（接收动态阶段 stages：每阶段一条线，配色按阶段序号循环） */
+/**
+ * 活动完成趋势（双线）：stages = 审批通过线（实线），submittedStages = 提交线（虚线）。
+ * 每阶段同色系成对出现：虚=提交、实=审批。
+ */
 export function buildActivityTrendOption(
   stages: Array<{ key: string; label: string; points: Array<{ date: string; value: number }> }>,
+  submittedStages?: Array<{ key: string; label: string; points: Array<{ date: string; value: number }> }>,
 ): EChartsOption {
   const dateSet: Set<string> = new Set()
   for (const s of stages) for (const p of s.points) dateSet.add(p.date)
+  if (submittedStages) for (const s of submittedStages) for (const p of s.points) dateSet.add(p.date)
   const dates = [...dateSet].sort()
+  const series: any[] = stages.map((s, i) => {
+    const byDate = new Map(s.points.map(p => [p.date, p.value]))
+    return {
+      name: `${s.label}审批`,
+      type: 'line',
+      smooth: true,
+      data: dates.map(d => byDate.get(d) ?? 0),
+      itemStyle: { color: ACTIVITY_STAGE_COLORS[i % ACTIVITY_STAGE_COLORS.length] },
+    }
+  })
+  if (submittedStages) {
+    for (const [i, s] of submittedStages.entries()) {
+      const byDate = new Map(s.points.map(p => [p.date, p.value]))
+      series.push({
+        name: `${s.label}提交`,
+        type: 'line',
+        smooth: true,
+        lineStyle: { type: 'dashed' as const },
+        itemStyle: { color: ACTIVITY_STAGE_COLORS[i % ACTIVITY_STAGE_COLORS.length] },
+        data: dates.map(d => byDate.get(d) ?? 0),
+      })
+    }
+  }
   return {
     tooltip: { trigger: 'axis' },
-    legend: { data: stages.map(s => s.label), right: 0, top: 0, textStyle: { fontSize: 11 } },
+    legend: { data: series.map((s: any) => s.name), right: 0, top: 0, textStyle: { fontSize: 11 } },
     grid: { left: 45, right: 20, top: 35, bottom: 30 },
     xAxis: { type: 'category', data: dates, ...axisStyle },
     yAxis: { type: 'value', ...axisStyle },
-    series: stages.map((s, i) => {
-      const byDate = new Map(s.points.map(p => [p.date, p.value]))
-      return {
-        name: s.label,
-        type: 'line',
-        smooth: true,
-        data: dates.map(d => byDate.get(d) ?? 0),
-        itemStyle: { color: ACTIVITY_STAGE_COLORS[i % ACTIVITY_STAGE_COLORS.length] },
-      }
-    }),
+    series,
   }
 }
 
 /**
- * Issue #119 多活动对比趋势（多线）：每个活动 × 每个阶段各一条线，
- * 阶段配色固定（按阶段序号），活动间以线型区分（实线/虚线/点线循环）。
+ * Issue #119 多活动对比趋势（多线）：每个活动 × 每个阶段各两条线（提交虚线 + 审批实线），
+ * 阶段配色固定（按阶段序号），活动间以线型循环（同活动内：提交=detail 虚线，审批=实线）。
  */
 export function buildActivityTrendMultiOption(
   activities: Array<{
     name: string
     stages: Array<{ key: string; label: string; points: Array<{ date: string; value: number }> }>
+    submittedStages?: Array<{ key: string; label: string; points: Array<{ date: string; value: number }> }>
   }>,
 ): EChartsOption {
   const dateSet: Set<string> = new Set()
   for (const a of activities) for (const s of a.stages) for (const p of s.points) dateSet.add(p.date)
+  if (activities.some(a => a.submittedStages))
+    for (const a of activities) for (const s of (a.submittedStages ?? [])) for (const p of s.points) dateSet.add(p.date)
   const dates = [...dateSet].sort()
-  const lineTypes = ['solid', 'dashed', 'dotted'] as const
+  const actLineTypes = ['solid', 'dashed', 'dotted'] as const
   const series: any[] = []
   for (const [ai, act] of activities.entries()) {
     for (const [si, st] of act.stages.entries()) {
       const byDate = new Map(st.points.map(p => [p.date, p.value]))
+      const color = ACTIVITY_STAGE_COLORS[si % ACTIVITY_STAGE_COLORS.length]
       series.push({
-        name: `${act.name}·${st.label}`,
+        name: `${act.name}·${st.label}审批`,
         type: 'line',
         smooth: true,
         data: dates.map(d => byDate.get(d) ?? 0),
-        lineStyle: { type: lineTypes[ai % lineTypes.length] },
-        itemStyle: { color: ACTIVITY_STAGE_COLORS[si % ACTIVITY_STAGE_COLORS.length] },
+        lineStyle: { type: actLineTypes[ai % actLineTypes.length] },
+        itemStyle: { color },
       })
+      const sub = act.submittedStages?.[si]
+      if (sub) {
+        const subByDate = new Map(sub.points.map(p => [p.date, p.value]))
+        series.push({
+          name: `${act.name}·${sub.label}提交`,
+          type: 'line',
+          smooth: true,
+          lineStyle: { type: 'dotted' as const },
+          itemStyle: { color },
+          data: dates.map(d => subByDate.get(d) ?? 0),
+        })
+      }
     }
   }
   return {

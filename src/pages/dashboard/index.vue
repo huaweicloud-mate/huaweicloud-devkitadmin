@@ -896,11 +896,12 @@ const activityTrendOpt = computed(() => {
       ? buildActivityTrendMultiOption(items.map(i => ({
           name: i.name,
           stages: i.trend!.stages,
+          submittedStages: i.trend!.submittedStages ?? [],
         })))
       : getEmptyChartOption()
   }
   return store.activityTrend?.stages?.length
-    ? buildActivityTrendOption(store.activityTrend.stages)
+    ? buildActivityTrendOption(store.activityTrend.stages, store.activityTrend.submittedStages)
     : getEmptyChartOption()
 })
 const activityConvOpt = computed(() =>
