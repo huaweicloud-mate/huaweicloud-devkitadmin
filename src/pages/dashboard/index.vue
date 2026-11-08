@@ -460,7 +460,7 @@
                 v-for="item in store.selectedActivityItems"
                 :key="item.code"
                 :title="`活动转化漏斗 · ${item.name}`"
-                desc="参与 → 初章完成 → 进阶章完成 → 终章完成 各阶段转化率"
+                :desc="funnelDescFor(item)"
                 :option="activityItemFunnelOpt(item)"
                 :height="360"
               />
@@ -469,7 +469,7 @@
           <div v-else class="chart-row one">
             <div class="chart-card">
               <div class="chart-title">活动转化漏斗</div>
-              <div class="chart-desc">参与 → 初章完成 → 进阶章完成 → 终章完成 各阶段转化率分析</div>
+              <div class="chart-desc">{{ funnelDescFor(null) }}</div>
               <div ref="funnelRef" :style="{ height: '380px' }"></div>
               <AlertBanner
                 style="margin-top:12px"
@@ -676,7 +676,7 @@ async function toggleAllActivity() {
   activityDropdownOpen.value = true
 }
 
-/** 勾/取消单个活动；从「全部」切换到具体活动；结果为空则忽略 */
+/** 勾/取消单个活动；从「全部」切换到具体活动；结果为空则回落到全部活动（后端空参=全部） */
 async function toggleActivityCode(code: string) {
   let next: string[]
   if (isAllActivitySelected.value) {
@@ -686,7 +686,8 @@ async function toggleActivityCode(code: string) {
       ? store.selectedActivityCodes.filter(c => c !== code)
       : [...store.selectedActivityCodes, code]
   }
-  if (!next.length) return
+  // 修复：取消最后一个勾选时不忽略——空数组走后端"全部活动"语义，
+  // 避免残留旧勾选导致页面渲染两个活动（原来 if (!next.length) return 吞掉了取消）
   await store.selectActivities(next)
   activityDropdownOpen.value = true
 }
@@ -698,6 +699,14 @@ function activityItemFunnelOpt(item: ActivityStatsItem) {
         item.summary.stages.map(s => ({ name: s.label, value: s.value, rate: s.rate })),
       )
     : getEmptyChartOption()
+}
+
+/** 漏斗说明文案：跟随活动实际阶段动态生成（不再写死四阶段），单选传 null 用当前选中活动 */
+function funnelDescFor(item: ActivityStatsItem | null) {
+  const stages = (item ? item.summary?.stages : store.activitySummary?.stages) ?? []
+  if (!stages.length) return '参与各阶段转化率分析'
+  const chain = stages.map(s => `${s.label}完成`).join(' → ')
+  return `参与 → ${chain} 各阶段转化率`
 }
 
 /** 单活动转化率图 option（多选并列用） */
