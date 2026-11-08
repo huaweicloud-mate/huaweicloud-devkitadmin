@@ -396,14 +396,13 @@
             </div>
           </div>
 
-          <!-- 多选：顶部汇总行（跨活动求和口径） -->
+          <!-- 多选/全部：顶部汇总行（参与为平台去重口径，不随活动数累加） -->
           <div v-if="store.isActivityMulti" class="all-summary-row">
-            <div class="all-summary-title">Σ 全部活动汇总（{{ store.selectedActivityItems.length }} 个活动求和）</div>
+            <div class="all-summary-title">Σ 全部活动汇总（共 {{ store.selectedActivityItems.length }} 个活动）</div>
             <div class="all-summary-metrics">
-              <span>参与 <b>{{ fmt(allActivitySummary?.totalParticipants) }}</b></span>
-              <span v-for="st in (allActivitySummary?.stages ?? [])" :key="st.key">{{ st.label }}完成 <b>{{ fmt(st.value) }}</b>（{{ rateText(st.rate) }}）</span>
+              <span>参与 <b>{{ fmt(allParticipantsDedup) }}</b>（平台去重用户，不随活动数累加）</span>
             </div>
-            <div class="all-summary-note">⚠ {{ multiSumNote }}</div>
+            <div class="all-summary-note">⚠ 各活动阶段口径不同，阶段完成人数与转化率见下方各活动 KPI 与漏斗</div>
           </div>
 
           <!-- KPI：多选并列对比；单选与现状一致 -->
@@ -505,7 +504,7 @@ import KpiCard from './components/KpiCard.vue'
 import ChartCard from './components/ChartCard.vue'
 import AlertBanner from './components/AlertBanner.vue'
 import { useDashboardStore, fmtYuanWithSymbol } from '@/store/dashboard'
-import { ALL_ACTIVITY_CODE, MULTI_SUM_NOTE } from './data/activity-config'
+import { ALL_ACTIVITY_CODE } from './data/activity-config'
 import type { ActivityStatsItem } from '@/api/activity'
 import {
   getEmptyChartOption,
@@ -646,7 +645,6 @@ watch(activityFunnelOpt, (newOpt) => {
 // ==================== 板块六：活动统计（Issue #119 多选对比） ====================
 
 const activityDropdownOpen = ref(false)
-const multiSumNote = MULTI_SUM_NOTE
 
 const isAllActivitySelected = computed(() =>
   store.selectedActivityCodes.includes(ALL_ACTIVITY_CODE),
@@ -665,7 +663,11 @@ const activitySelectionLabel = computed(() => {
 })
 
 /** 汇总行数据（多选时取 all 段） */
-const allActivitySummary = computed(() => store.activityStats?.all?.summary ?? null)
+/** Σ 行参与人数：平台去重口径（各活动报告同一去重值），取最大不累加 */
+const allParticipantsDedup = computed(() => {
+  const vals = store.selectedActivityItems.map(i => i.summary?.totalParticipants ?? 0)
+  return vals.length ? Math.max(...vals) : null
+})
 
 function rateText(rate: number | undefined | null): string {
   return rate != null ? `${Math.round(rate)}%` : '--'
