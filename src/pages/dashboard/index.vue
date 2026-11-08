@@ -695,6 +695,20 @@ async function toggleActivityCode(code: string) {
 }
 
 /** 单活动漏斗图 option（多选并排用） */
+/** 把多阶段趋势按日期求和为单条"合计"线（趋势图纵轴只保留总量，阶段细节由漏斗/KPI 承载） */
+function flattenTrendStages(
+  stages: Array<{ key: string; label: string; points: Array<{ date: string; value: number }> }>,
+  label: string,
+): { key: string; label: string; points: Array<{ date: string; value: number }> } {
+  const byDate = new Map<string, number>()
+  for (const s of stages) for (const p of s.points) byDate.set(p.date, (byDate.get(p.date) ?? 0) + p.value)
+  return {
+    key: 'all',
+    label,
+    points: [...byDate.entries()].map(([date, value]) => ({ date, value })),
+  }
+}
+
 function activityItemFunnelOpt(item: ActivityStatsItem) {
   return item.summary?.stages?.length
     ? buildActivityFunnelOption(
@@ -891,19 +905,19 @@ const voucherPieOpt = computed(() =>
 )
 
 const activitySubmittedTrendOpt = computed(() => {
-  const stages = store.isActivityMulti ? null : store.activityTrend?.submittedStages
   if (store.isActivityMulti) {
     const items = store.selectedActivityItems
       .filter(i => i.trend?.submittedStages?.length)
     return items.length
       ? buildActivityTrendMultiSubmittedOption(items.map(i => ({
           name: i.name,
-          stages: i.trend!.submittedStages!,
+          stages: [flattenTrendStages(i.trend!.submittedStages!, '合计')],
         })))
       : getEmptyChartOption()
   }
+  const stages = store.activityTrend?.submittedStages
   return stages?.length
-    ? buildActivityTrendSubmittedOption(stages)
+    ? buildActivityTrendSubmittedOption([flattenTrendStages(stages, '合计')])
     : getEmptyChartOption()
 })
 const activityApprovedTrendOpt = computed(() => {
@@ -913,12 +927,12 @@ const activityApprovedTrendOpt = computed(() => {
     return items.length
       ? buildActivityTrendMultiApprovedOption(items.map(i => ({
           name: i.name,
-          stages: i.trend!.stages,
+          stages: [flattenTrendStages(i.trend!.stages, '合计')],
         })))
       : getEmptyChartOption()
   }
   return store.activityTrend?.stages?.length
-    ? buildActivityTrendApprovedOption(store.activityTrend.stages)
+    ? buildActivityTrendApprovedOption([flattenTrendStages(store.activityTrend.stages, '合计')])
     : getEmptyChartOption()
 })
 const activityConvOpt = computed(() =>
