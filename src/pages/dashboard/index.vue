@@ -477,9 +477,30 @@
               />
             </div>
           </div>
-          <div class="chart-row two">
+          <!-- 趋势图：多选/全部按活动拆图（各活动独立 Y 轴，避免量级差把小活动线压成平线）；单选保持两卡 -->
+          <template v-if="store.isActivityMulti">
+            <div
+              v-for="item in store.selectedActivityItems"
+              :key="'trend-' + item.code"
+              class="chart-row two"
+            >
+              <ChartCard
+                :title="`每日提交趋势 · ${item.name}`"
+                desc="各阶段每日提交人数（提交即记录，含未通过）"
+                :option="activityItemSubmittedOpt(item)"
+              />
+              <ChartCard
+                :title="`每日审批通过趋势 · ${item.name}`"
+                desc="各阶段每日审批通过人数（已确认完成）"
+                :option="activityItemApprovedOpt(item)"
+              />
+            </div>
+          </template>
+          <div v-else class="chart-row two">
             <ChartCard title="每日提交趋势" desc="各阶段每日提交人数（提交即记录，含未通过）" :option="activitySubmittedTrendOpt" />
             <ChartCard title="每日审批通过趋势" desc="各阶段每日审批通过人数（已确认完成）" :option="activityApprovedTrendOpt" />
+          </div>
+          <div class="chart-row two">
             <template v-if="store.isActivityMulti">
               <ChartCard
                 v-for="item in store.selectedActivityItems"
@@ -703,6 +724,18 @@ function activityItemFunnelOpt(item: ActivityStatsItem) {
         item.summary.stages.map(s => ({ name: s.label, value: s.value, rate: s.rate })),
       )
     : getEmptyChartOption()
+}
+
+/** 单活动每日提交趋势 option（多选拆图用，各活动独立 Y 轴） */
+function activityItemSubmittedOpt(item: ActivityStatsItem) {
+  const stages = item.trend?.submittedStages
+  return stages?.length ? buildActivityTrendSubmittedOption(stages) : getEmptyChartOption()
+}
+
+/** 单活动每日审批通过趋势 option（多选拆图用，各活动独立 Y 轴） */
+function activityItemApprovedOpt(item: ActivityStatsItem) {
+  const stages = item.trend?.stages
+  return stages?.length ? buildActivityTrendApprovedOption(stages) : getEmptyChartOption()
 }
 
 /** 漏斗说明文案：跟随活动实际阶段动态生成（不再写死四阶段），单选传 null 用当前选中活动 */
