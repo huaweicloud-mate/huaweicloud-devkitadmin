@@ -83,7 +83,14 @@
               trend-dir="up"
               accent="cyan"
               icon="☀️"
-            />
+            >
+              <template #badge>
+                <div class="kpi-badge guest-badge">
+                  <div class="badge-label">游客日活会话</div>
+                  <div class="badge-num">{{ fmt(store.developerSummary?.guestDau) }}</div>
+                </div>
+              </template>
+            </KpiCard>
             <KpiCard
               label="月活跃数（MAU）"
               :value="fmt(store.developerSummary?.mau)"
@@ -96,6 +103,26 @@
           <div class="chart-row two">
             <ChartCard title="DAU / MAU 趋势（近30天）" desc="日活和月活趋势" :option="dauTrendOpt" :height="320" />
             <ChartCard title="新增用户趋势（环比 vs 同比）" desc="近6个月每月新增用户及增长率" :option="newUserTrendOpt" :height="320" />
+          </div>
+
+          <div class="sub-section-title" style="margin-top:24px">游客活跃（会话数，不是用户数）</div>
+          <div class="kpi-grid">
+            <KpiCard
+              label="游客 30 天活跃会话"
+              :value="fmt(store.developerSummary?.guestMauSessions)"
+              trend="近30天 distinct fallback hash"
+              trend-dir="flat"
+              accent="orange"
+              icon="🚶"
+            />
+          </div>
+          <div class="chart-row one">
+            <ChartCard
+              title="游客日活会话（会话数）"
+              desc="每日未解析临时凭证的会话数（distinct fallback hash）；不是用户数，不与 DAU 相加"
+              :option="guestSessionOpt"
+              :height="280"
+            />
           </div>
 
           <!-- 插件的开发者画像 -->
@@ -529,7 +556,7 @@ import { ALL_ACTIVITY_CODE } from './data/activity-config'
 import type { ActivityStatsItem } from '@/api/activity'
 import {
   getEmptyChartOption,
-  buildDauTrendOption, buildAgentDistributionOption, buildVersionDistributionOption, buildNewUserTrendOption,
+  buildDauTrendOption, buildGuestSessionOption, buildAgentDistributionOption, buildVersionDistributionOption, buildNewUserTrendOption,
   buildDownloadPieOption, buildDownloadTrendOption,
   buildCapabilityTrendOption, buildCapabilityPieOption, buildSkillRankOption,
   buildSandboxTrendOption, buildSandboxDurationOption, buildSandboxHourlyOption,
@@ -771,6 +798,11 @@ onBeforeUnmount(() => {
 const dauTrendOpt = computed(() =>
   store.dauTrend.length
     ? buildDauTrendOption(store.dauTrend)
+    : getEmptyChartOption()
+)
+const guestSessionOpt = computed(() =>
+  store.dauTrend.length
+    ? buildGuestSessionOption(store.dauTrend)
     : getEmptyChartOption()
 )
 const agentDistOpt = computed(() => {
@@ -1158,6 +1190,10 @@ function activityStageStyle(i: number) {
   padding: 24px 0;
   font-size: 12px;
 }
+.kpi-badge.guest-badge .badge-num {
+  color: #FAAD14;
+}
+
 .kpi-badge {
   text-align: right;
   padding-left: 16px;
